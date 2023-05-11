@@ -1,24 +1,35 @@
-library(ggplot2)
+library(ggplot2) #Access functions to e.g. plot data (ggplot) and read files(readxl/readr)
 library(dplyr)
 library(readxl)
 library(readr)
 
+#open Statpop data with all Gemeinden and only select their coordinates and Gemeinde Nr.
+#!! Each Gemeinde only has 1 square -> the data is not per hectare
 pop_data_gmd <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
-  select(E_KOORD,N_KOORD,GMDE)
+  select(E_KOORD,N_KOORD,GMDE) 
 
-gemeinden <- read_excel("2021_Gemeinden.xlsx") %>%
-  mutate(GMDE=`Gmd-Nr.`)
+#Open list of all Gemeinden in Bezirk Baden
+gemeinden <- read_excel("2021_Gemeinden.xlsx") %>% 
+  mutate(GMDE=`Gmd-Nr.`) #Same name as in pop_data_gmd
 
+#combines the above datasets and groups them by GMDE
+#if the Gemeinde isnt in Baden, then you get NA, as that gemeinde will not be in the gemeinden dataset
 gmd_data <- left_join(pop_data_gmd,gemeinden, by="GMDE") %>%
-  filter(!is.na(Gemeinde))
+  filter(!is.na(Gemeinde))#Filter out all NA -> all Gemeinden not in Bezirk Baden
+#Get the coordinate range all the Gemeinden
 x_range <- range(gmd_data$E_KOORD)
 y_range <- range(gmd_data$N_KOORD)
 
+#Population data per hectare
 pop_data <- read_csv("PopDataperHectare.csv")%>%
-  filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2]))
+  filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) #Only hectares in coordinate range of Bezirk Baden
 
-gmd_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) +
-  geom_tile(aes(fill=cut(B21BTOT,c(1,4,7,16,41,121,Inf)))) +
+#Create Plot and set x- and y- axis and dataset
+gmd_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) + 
+  #Set the geomertry of each point -> squares/tiles and set how to fill each tile
+  geom_tile(aes(fill=cut(B21BTOT,c(1,4,7,16,41,121,Inf)))) + 
+  #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
+  #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
   scale_fill_manual(
     values=c("(1,4]"="#ffffb2",
              "(4,7]"="#fdd976",
@@ -29,6 +40,7 @@ gmd_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) +
     labels=c("1-3","4-6","7-15","16-40","41-120",">120"),
     name="population per ha",
     na.value = "green") +
+  #remove all axis text and titles
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
