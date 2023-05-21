@@ -2,7 +2,7 @@ library(ggplot2) #Access functions to e.g. plot data (ggplot) and read files(rea
 library(dplyr)
 library(readxl)
 library(readr)
-#pull test successful, push test
+
 #open Statpop data with all Gemeinden and only select their coordinates and Gemeinde Nr.
 #!! Each Gemeinde only has 1 square -> the data is not per hectare
 pop_data_gmd <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
