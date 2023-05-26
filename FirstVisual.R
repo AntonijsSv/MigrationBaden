@@ -1,5 +1,8 @@
 library(ggplot2) #Access functions to e.g. plot data (ggplot) and read files(readxl/readr)
 library(dplyr)
+library(sf) # spatial data handling
+library(raster)
+library(viridis) # viridis color scale
 library(readxl)
 library(readr)
 
@@ -24,10 +27,38 @@ y_range <- range(gmd_data$N_KOORD)
 pop_data <- read_csv("PopDataperHectare.csv")%>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) #Only hectares in coordinate range of Bezirk Baden
 
+map <- raster("Maps/Swiss_1000.tif") #Map Background
+#Create a raster with the size of the data + excess for better spacial understanding
+excess <- 1000
+gemeinden_map <- as(extent(x_range[1]-excess,x_range[2]+excess,y_range[1]-excess, y_range[2]+excess),'SpatialPolygons') 
+crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
+
+map <- crop(map,gemeinden_map)%>% #Crop the large relief to just the needed size
+  as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
+  as.data.frame() %>%
+  rename(relief = `Swiss_1000`)
+
 #Create Plot and set x- and y- axis and dataset
-gmd_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) + 
+baden_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) + 
+  geom_raster(
+    data = map,
+    inherit.aes = FALSE,
+    aes(x,y,
+        alpha=relief 
+        #since fill is already used for the data, alpha values are used to paint the map
+    ),
+  ) +
+  scale_alpha(
+    name = "",
+    range = c(0.9,0),
+    guide = F 
+  ) +
   #Set the geomertry of each point -> squares/tiles and set how to fill each tile
-  geom_tile(aes(fill=cut(B21BTOT,c(1,4,7,16,41,121,Inf)))) + 
+  geom_tile(aes(fill=cut(B21BTOT,
+                         c(1,4,7,16,41,121,Inf)
+                         )
+                ),
+            ) + 
   #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
   #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
   scale_fill_manual(
@@ -41,11 +72,18 @@ gmd_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) +
     name="population per ha",
     na.value = "green") +
   #remove all axis text and titles
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.y=element_blank(),
-        axis.title.x=element_blank(),
-        #rect = element_blank()
+  theme_minimal()+
+  theme(
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
   )
-gmd_tile
+
+ggdraw()+
+  draw_image("Kanti_Baden_Logo.png", x=0.4, y=-0.4, scale =0.1)+
+  draw_plot(baden_tile)
+
