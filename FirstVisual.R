@@ -5,16 +5,16 @@ library(readr)
 
 #open Statpop data with all Gemeinden and only select their coordinates and Gemeinde Nr.
 #!! Each Gemeinde only has 1 square -> the data is not per hectare
-pop_data_gmd <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
+coords_gmde <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
   select(E_KOORD,N_KOORD,GMDE) 
 
 #Open list of all Gemeinden in Bezirk Baden
-gemeinden <- read_excel("2021_Gemeinden.xlsx") %>% 
+gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
   mutate(GMDE=`Gmd-Nr.`) #Same name as in pop_data_gmd
 
 #combines the above datasets and groups them by GMDE
 #if the Gemeinde isnt in Baden, then you get NA, as that gemeinde will not be in the gemeinden dataset
-gmd_data <- left_join(pop_data_gmd,gemeinden, by="GMDE") %>%
+gmd_data <- left_join(coords_gmde,gemeinden_baden, by="GMDE") %>%
   filter(!is.na(Gemeinde))#Filter out all NA -> all Gemeinden not in Bezirk Baden
 #Get the coordinate range all the Gemeinden
 x_range <- range(gmd_data$E_KOORD)
