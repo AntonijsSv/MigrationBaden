@@ -5,6 +5,7 @@ library(raster)
 library(viridis) # viridis color scale
 library(readxl)
 library(readr)
+library(lintr)
 
 #open Statpop data with all Gemeinden and only select their coordinates and Gemeinde Nr.
 #!! Each Gemeinde only has 1 square -> the data is not per hectare
@@ -27,21 +28,19 @@ y_range <- range(gmd_data$N_KOORD)
 pop_data <- read_csv("PopDataperHectare.csv")%>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) #Only hectares in coordinate range of Bezirk Baden
 
-map <- raster("Maps/Swiss_1000.tif") #Map Background
-#Create a raster with the size of the data + excess for better spacial understanding
-excess <- 1000
-gemeinden_map <- as(extent(x_range[1]-excess,x_range[2]+excess,y_range[1]-excess, y_range[2]+excess),'SpatialPolygons') 
-crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
 
-map <- crop(map,gemeinden_map)%>% #Crop the large relief to just the needed size
+map500 <- raster("Maps/Baden_500.tif")%>% #Crop the large relief to just the needed size
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
-  rename(relief = `Swiss_1000`)
+  rename(relief = `Baden_500`)
 
+
+
+visual_data <- pop_data
 #Create Plot and set x- and y- axis and dataset
-baden_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) + 
+baden_tile <- ggplot(visual_data, aes(x=E_KOORD,y= N_KOORD)) + 
   geom_raster(
-    data = map,
+    data = map500,
     inherit.aes = FALSE,
     aes(x,y,
         alpha=relief 
@@ -83,7 +82,5 @@ baden_tile <- ggplot(pop_data, aes(x=E_KOORD,y= N_KOORD)) +
     panel.grid.minor = element_blank(),
   )
 
-ggdraw()+
-  draw_image("Kanti_Baden_Logo.png", x=0.4, y=-0.4, scale =0.1)+
-  draw_plot(baden_tile)
+baden_tile
 
