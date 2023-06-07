@@ -26,24 +26,20 @@ gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
   n_range <- c(min(gemeinden_coords$N_MIN)-excess,max(gemeinden_coords$N_MAX)+excess)
 
 
-map <- raster("Maps/Swiss_1000.tif") #Map Background
-#Create a raster with the size of the data + excess for better spacial understanding
-gemeinden_map <- as(extent(e_range[1],e_range[2],n_range[1], n_range[2]),'SpatialPolygons') 
-crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
-
-map <- crop(map,gemeinden_map)%>% #Crop the large relief to just the needed size
-  as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
-  as.data.frame() %>%
-  rename(relief = `Swiss_1000`)
-
-
+  map500 <- raster("Maps/Baden_500.tif")%>% #Crop the large relief to just the needed size
+    as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
+    as.data.frame() %>%
+    rename(relief = `Baden_500`)
+  
+  visual_data <- gemeinden_coords
+  
 baden_map <- ggplot(
-  data=gemeinden_coords,
+  data=visual_data,
   aes(fill=Gesamtbevölkerung)
   ) +
   #Map Background
   geom_raster(
-    data = map,
+    data = map500,
     inherit.aes = FALSE,
     aes(x,y,
       alpha=relief 
