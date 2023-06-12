@@ -15,6 +15,17 @@ library(magick)
 #Branch Testing
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
 
+politics <- read_excel("politicalparties.xlsx",col_names = F)
+colnames(politics) <- c("Gemeinde","party_num", "party", "percentage")
+politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))#FDP, CVP, SP, SVP, GLP, GPS
+
+gps_gemeinde <- left_join(filter(politics, party_num == 13),gemeinden_baden, by="Gemeinde")
+sp_gemeinde <- left_join(filter(politics, party_num == 3),gemeinden_baden, by="Gemeinde")
+glp_gemeinde <- left_join(filter(politics, party_num == 31),gemeinden_baden, by="Gemeinde")
+cvp_gemeinde <- left_join(filter(politics, party_num == 2),gemeinden_baden, by="Gemeinde")
+fdp_gemeinde <- left_join(filter(politics, party_num == 1),gemeinden_baden, by="Gemeinde")
+svp_gemeinde <- left_join(filter(politics, party_num == 4),gemeinden_baden, by="Gemeinde")
+
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp")
 gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
   mutate(GMDNR=`Gmd-Nr.`,gemeinde_pop=`Gesamtbevölkerung`)
@@ -25,17 +36,20 @@ gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
   e_range <- c(min(gemeinden_coords$E_MIN)-excess,max(gemeinden_coords$E_MAX)+excess) 
   n_range <- c(min(gemeinden_coords$N_MIN)-excess,max(gemeinden_coords$N_MAX)+excess)
 
+  map <- raster("Maps/Swiss_500.tif")
+  gemeinden_map <- as(extent(e_range[1]-excess,e_range[2]+excess,n_range[1]-excess, n_range[2]+excess),'SpatialPolygons') 
+  crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
 
-  map500 <- raster("Maps/Baden_500.tif")%>% #Crop the large relief to just the needed size
-    as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
-    as.data.frame() %>%
-    rename(relief = `Baden_500`)
-  
-  visual_data <- gemeinden_coords
-  
-baden_map <- ggplot(
+map500 <- raster("Maps/Baden500_excess.tif")%>% #Crop the large relief to just the needed size
+  as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
+  as.data.frame() %>%
+  rename(relief = `Baden_500`)
+
+baden_map <- function(visual_data, fill_data)
+{ 
+  ggplot(
   data=visual_data,
-  aes(fill=Gesamtbevölkerung)
+  aes(fill=fill_data)
   ) +
   #Map Background
   geom_raster(
@@ -49,7 +63,7 @@ baden_map <- ggplot(
   scale_alpha(
     name = "",
     range = c(0.9,0),
-    guide = F 
+    guide = F
   ) +
   geom_sf( #Create the Gemeinden Boundaries
     data = gemeinden_coords,
@@ -74,9 +88,5 @@ baden_map <- ggplot(
     panel.grid.minor = element_blank(),
   ) 
   
-ggdraw()+
-  draw_image("Kanti_Baden_Logo.png", x=0.4, y=-0.4, scale =0.1)+
-  draw_plot(baden_map)
-
-
-
+}
+baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung)
