@@ -6,25 +6,36 @@ library(sf) # spatial data handling
 library(raster)
 library(viridis) # viridis color scale
 library(cowplot)
-library(rmarkdown)
 library(readr)
 library(readxl)
 library(shiny)
 library(magick)
 #canton_geo = read_sf("Boundary_Data/g2k23.shp")
-#Branch Testing
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
 
 politics <- read_excel("politicalparties.xlsx",col_names = F)
-colnames(politics) <- c("Gemeinde","party_num", "party", "percentage")
-politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))#FDP, CVP, SP, SVP, GLP, GPS
+colnames(politics) <- c("Gemeinde","party_num", "party", "percentage") #name the columns
+politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only these parties: FDP, CVP, SP, SVP, GLP, GPS
 
-gps_gemeinde <- left_join(filter(politics, party_num == 13),gemeinden_baden, by="Gemeinde")
-sp_gemeinde <- left_join(filter(politics, party_num == 3),gemeinden_baden, by="Gemeinde")
-glp_gemeinde <- left_join(filter(politics, party_num == 31),gemeinden_baden, by="Gemeinde")
-cvp_gemeinde <- left_join(filter(politics, party_num == 2),gemeinden_baden, by="Gemeinde")
-fdp_gemeinde <- left_join(filter(politics, party_num == 1),gemeinden_baden, by="Gemeinde")
-svp_gemeinde <- left_join(filter(politics, party_num == 4),gemeinden_baden, by="Gemeinde")
+  politics_improved <- data.frame(matrix(ncol = 7, nrow = 0))
+  colnames(politics_improved) <- c("Gemeinde", "FDP", "CVP", "SP", "SVP", "GPS", "GLP")
+  for (i in 1:nrow(politics)){
+    if (i%%6==0) {
+      row <- c(politics[i,1])
+      for (party in 1:6) {
+        row <- append(row, politics[i+party-6,4])
+      }
+      politics_improved[nrow(politics_improved)+1,] <- row
+    }
+  }
+  
+#make a database consisting only of 1 parties
+#gps_gemeinde <- filter(politics, party_num == 13)
+#sp_gemeinde <- filter(politics, party_num == 3)
+#glp_gemeinde <- filter(politics, party_num == 31)
+#cvp_gemeinde <- filter(politics, party_num == 2)
+#fdp_gemeinde <- filter(politics, party_num == 1)
+#svp_gemeinde <- filter(politics, party_num == 4)
 
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp")
 gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
@@ -32,20 +43,23 @@ gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>%
 
 gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
   filter(!is.na(Gemeinde))
-  excess <- 7000
+  excess <- 2000
   e_range <- c(min(gemeinden_coords$E_MIN)-excess,max(gemeinden_coords$E_MAX)+excess) 
   n_range <- c(min(gemeinden_coords$N_MIN)-excess,max(gemeinden_coords$N_MAX)+excess)
 
-  map <- raster("Maps/Swiss_500.tif")
-  gemeinden_map <- as(extent(e_range[1]-excess,e_range[2]+excess,n_range[1]-excess, n_range[2]+excess),'SpatialPolygons') 
-  crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
-
-map500 <- raster("Maps/Baden500_excess.tif")%>% #Crop the large relief to just the needed size
+  #map <- raster("Maps/Swiss_500.tif")
+  #gemeinden_map <- as(extent(e_range[1]-excess,e_range[2]+excess,n_range[1]-excess, n_range[2]+excess),'SpatialPolygons') 
+  #crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
+  #map500_excess <- crop(map, gemeinden_map)
+  #writeRaster(map500_excess, "Baden500_excess.tif", format="GTIFF")
+  #Programme to write tiff file as the swiss wide file is too large for github
+  
+map500 <- raster("Baden500_excess.tif")%>% 
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
-  rename(relief = `Baden_500`)
+  rename(relief = `Baden500_excess`)
 
-baden_map <- function(visual_data, fill_data)
+baden_map <- function(visual_data, fill_data, legend)
 { 
   ggplot(
   data=visual_data,
@@ -75,7 +89,8 @@ baden_map <- function(visual_data, fill_data)
     alpha = 0.8,
     begin = 0.1,
     end = 0.9,
-    direction = -1
+    direction = -1,
+    name = legend
   ) +
   theme_minimal() +
   theme(
@@ -89,4 +104,5 @@ baden_map <- function(visual_data, fill_data)
   ) 
   
 }
-baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung)
+baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
+baden_map(politics_improved, politics_improved$FDP, "FDP %")
