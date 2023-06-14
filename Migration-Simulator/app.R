@@ -5,10 +5,6 @@
 # Find out more about building applications with Shiny here:
 #
 #    http://shiny.rstudio.com/
-#
-
-library(shiny)
-library(ggplot2)
 library(rstudioapi)
 library(tidyverse) 
 library(dplyr)
@@ -17,139 +13,142 @@ library(sf) # spatial data handling
 library(raster)
 library(viridis) # viridis color scale
 library(cowplot)
-library(rmarkdown)
 library(readr)
 library(readxl)
 library(shiny)
 library(magick)
 
-
 #canton_geo = read_sf("Boundary_Data/g2k23.shp")
 
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
+politics <- read_excel("politicalparties.xlsx",col_names = F)
+colnames(politics) <- c("Gemeinde","party_num", "party", "percentage") #name the columns
+politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only these parties: FDP, CVP, SP, SVP, GLP, GPS
+politics_improved <- data.frame(matrix(ncol = 7, nrow = 0)) #create a new database, empty
+colnames(politics_improved) <- c("Gemeinde", "FDP", "CVP", "SP", "SVP", "GPS", "GLP")
+#for each municipality, give percentage for each party
+for (i in 1:nrow(politics)){ 
+  if (i%%6==0) {#Since there are 6 parties, this will happen once for each municipality
+    row <- c(politics[i,1])#name of municipality
+    for (party in 1:6) {#go thru each party in 1 municipality
+      row <- append(row, politics[i+party-6,4])#Add the % for each party to the row
+    }
+    politics_improved[nrow(politics_improved)+1,] <- row #Add the new row to the new database
+  }
+}
 
-municipality_geo <- read_sf("Boundary_Data/g2g23.shp")
-gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
-  mutate(GMDNR=`Gmd-Nr.`,gemeinde_pop=`Gesamtbevölkerung`)
+municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
+gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
+  mutate(GMDNR=`Gmd-Nr.`) #Rename certain column to be the same in both files
 
-gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
+# Join both files, this is done using the column GMDNR
+#for all municipalities outside Baden, this will create NA, which is then filtered out
+gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>% 
   filter(!is.na(Gemeinde))
-excess <- 7000
-e_range <- c(min(gemeinden_coords$E_MIN)-excess,max(gemeinden_coords$E_MAX)+excess) 
-n_range <- c(min(gemeinden_coords$N_MIN)-excess,max(gemeinden_coords$N_MAX)+excess)
-
-
-map <- raster("Maps/Swiss_1000.tif") #Map Background
-#Create a raster with the size of the data + excess for better spacial understanding
-gemeinden_map <- as(extent(e_range[1],e_range[2],n_range[1], n_range[2]),'SpatialPolygons') 
-crs(gemeinden_map) <- crs(map) #Set coordinate system of the new raster
-
-map <- crop(map,gemeinden_map)%>% #Crop the large relief to just the needed size
+map500 <- raster("Maps/Baden500_excess.tif")%>% 
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
-  rename(relief = `Swiss_1000`)
+  rename(relief = `Baden500_excess`)
 
 ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulator"))),
   sidebarLayout(position = "right",
                 sidebarPanel(h4(strong("Migrationfactors:")),
-                             sliderInput(inputId = "slider1",
-                                         label = "Political Orientation",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider2",
-                                         label = "Shopping centre/grocery store proximity",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider3",
-                                         label = "Entertainment possibilities",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider4",
-                                         label = "Proximity to work",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider5",
-                                         label = "Houspreises/Rental prices",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider6",
-                                         label = "Taxes",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider7",
-                                         label = "Public Transport",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3)
+                    sliderInput(inputId = "politics",
+                    label = "Political Orientation",
+                    min = 0,
+                    max = 6,
+                    value = 0)
                 ),
                 mainPanel(("The following map shows the population of the region Baden. By moving the sliders on the right the migration factors can be altered and the map will show the effect it."),
-                          plotOutput("map")
+                          plotOutput("map"),
+                          tableOutput("values")
                 )
   )
 )
-
 # Define server logic ----
 server <- function(input, output) {
-  output$value <- renderPrint({ input$slider1 })
-  output$value <- renderPrint({ input$slider2 })
-  output$value <- renderPrint({ input$slider3 })
-  output$value <- renderPrint({ input$slider4 })
-  output$value <- renderPrint({ input$slider5 })
-  output$value <- renderPrint({ input$slider6 })
-  output$value <- renderPrint({ input$slider7 })
+  sliderValues <- reactive({
+    data.frame(
+      Name = c("politics"),
+      Value = as.character(c(input$politics)),
+      stringsAsFactors = FALSE)
+    
+  })
+  output$values <- renderTable({
+    sliderValues()
+  })
   
-  output$map <- renderPlot({ 
-    baden_map <- ggplot(
-      data=gemeinden_coords,
-      aes(fill=Gesamtbevölkerung)
-    ) +
-      #Map Background
-      geom_raster(
-        data = map,
-        inherit.aes = FALSE,
-        aes(x,y,
-            alpha=relief 
-            #since fill is already used for the data, alpha values are used to paint the map
-        )
+  output$map <- renderPlot({
+    baden_map <- function(visual_data, fill_data, legend)
+    { 
+      ggplot(
+        data=visual_data, #Database, where the visual data
+        aes(fill=fill_data) #Variable that dictates fill of each municipality
       ) +
-      scale_alpha(
-        name = "",
-        range = c(0.9,0),
-        guide = F 
-      ) +
-      geom_sf( #Create the Gemeinden Boundaries
-        data = gemeinden_coords,
-        color = "transparent",
-        size = 0.5) +
+        #Map Background
+        geom_raster(
+          data = map500,
+          inherit.aes = FALSE,
+          aes(x,y,
+              alpha=relief 
+              #since fill is already used for the data, alpha values are used to paint the map
+              #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
+          ),
+        ) +
+        scale_alpha(#How to fill the map
+          name = "",
+          range = c(0.9,0),
+          guide = F
+        ) +
+        geom_sf( #Create the municiplality Boundaries
+          data = gemeinden_coords,
+          color = "transparent",
+          size = 0.5) +
+        
+        scale_fill_viridis(#Set a custom fill for the data to be visualised
+          option = "magma",
+          alpha = 0.4, #make them slightly transparent to see map background
+          begin = 0.1,
+          end = 0.9,
+          direction = -1,
+          name = legend
+        ) +
+        #remove visual clutter
+        theme_minimal() +
+        theme(
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+        ) 
       
-      scale_fill_viridis(
-        option = "magma",
-        alpha = 0.8,
-        begin = 0.1,
-        end = 0.9,
-        direction = -1
-      ) +
-      theme_minimal() +
-      theme(
-        axis.line = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()
-      ) 
-    baden_map
-
-  }) 
+    }
+      if (sliderValues()[1,2]==0) {
+        baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
+      }
+      if (sliderValues()[1,2]==1) {
+        baden_map(politics_improved, politics_improved$GPS, "GPS %")
+      }
+      if (sliderValues()[1,2]==2) {
+        baden_map(politics_improved, politics_improved$SP, "SP %")
+      }
+      if (sliderValues()[1,2]==3) {
+        baden_map(politics_improved, politics_improved$GLP, "GLP %")
+      }
+      if (sliderValues()[1,2]==4) {
+        baden_map(politics_improved, politics_improved$CVP, "CVP %")
+      }
+      if (sliderValues()[1,2]==5) {
+        baden_map(politics_improved, politics_improved$SP, "FDP %")
+      }
+      if (sliderValues()[1,2]==6) {
+        baden_map(politics_improved, politics_improved$SVP, "SVP %")
+      }
+    }) 
 }
-
 # Run the app ----
 shinyApp(ui = ui, server = server)
