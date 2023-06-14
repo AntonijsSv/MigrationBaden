@@ -53,11 +53,11 @@ ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulator"))),
   sidebarLayout(position = "right",
                 sidebarPanel(h4(strong("Migrationfactors:")),
-                             sliderInput(inputId = "slider1",
+                             sliderInput(inputId = "politics",
                                          label = "Political Orientation",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
+                                         min = 0,
+                                         max = 6,
+                                         value = 1),
                              sliderInput(inputId = "slider2",
                                          label = "Shopping centre/grocery store proximity",
                                          min = 1,
@@ -97,59 +97,76 @@ ui <- fluidPage(
 
 # Define server logic ----
 server <- function(input, output) {
-  output$value <- renderPrint({ input$slider1 })
-  output$value <- renderPrint({ input$slider2 })
-  output$value <- renderPrint({ input$slider3 })
-  output$value <- renderPrint({ input$slider4 })
-  output$value <- renderPrint({ input$slider5 })
-  output$value <- renderPrint({ input$slider6 })
-  output$value <- renderPrint({ input$slider7 })
+  sliderValues <- reactive({
+    
+    data.frame(
+      Name = c("politics",
+               "slider2",
+               "slider3",
+               "slider4",
+               "slider5",
+               "slider6",
+               "slider7"),
+      Value = as.character(c(input$politics,
+                             input$slider2,
+                             input$slider3,
+                             input$slider4,
+                             input$slider5,
+                             input$slider6,
+                             input$slider7,
+                             )),
+      stringsAsFactors = FALSE)
+    
+  })ss
   
-  output$map <- renderPlot({ 
-    baden_map <- ggplot(
-      data=gemeinden_coords,
-      aes(fill=Gesamtbevölkerung)
-    ) +
-      #Map Background
-      geom_raster(
-        data = map,
-        inherit.aes = FALSE,
-        aes(x,y,
-            alpha=relief 
-            #since fill is already used for the data, alpha values are used to paint the map
-        )
+  if( sliderValues(input$politics) == 0){
+  
+    output$map <- renderPlot({ 
+      baden_map <- ggplot(
+        data=gemeinden_coords,
+        aes(fill=Gesamtbevölkerung)
       ) +
-      scale_alpha(
-        name = "",
-        range = c(0.9,0),
-        guide = F 
-      ) +
-      geom_sf( #Create the Gemeinden Boundaries
-        data = gemeinden_coords,
-        color = "transparent",
-        size = 0.5) +
+        #Map Background
+        geom_raster(
+          data = map,
+          inherit.aes = FALSE,
+          aes(x,y,
+              alpha=relief 
+              #since fill is already used for the data, alpha values are used to paint the map
+          )
+        ) +
+        scale_alpha(
+          name = "",
+          range = c(0.9,0),
+          guide = F 
+        ) +
+        geom_sf( #Create the Gemeinden Boundaries
+          data = gemeinden_coords,
+          color = "transparent",
+          size = 0.5) +
+        
+        scale_fill_viridis(
+          option = "magma",
+          alpha = 0.8,
+          begin = 0.1,
+          end = 0.9,
+          direction = -1
+        ) +
+        theme_minimal() +
+        theme(
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()
+        ) 
+      baden_map
       
-      scale_fill_viridis(
-        option = "magma",
-        alpha = 0.8,
-        begin = 0.1,
-        end = 0.9,
-        direction = -1
-      ) +
-      theme_minimal() +
-      theme(
-        axis.line = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()
-      ) 
-    baden_map
-
-  }) 
+    }) 
+  
+  }
 }
-
 # Run the app ----
 shinyApp(ui = ui, server = server)
