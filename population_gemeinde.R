@@ -63,8 +63,8 @@ map500 <- raster("Baden500_excess.tif")%>%
 baden_map <- function(visual_data, fill_data, legend)
 { 
   ggplot(
-  data=visual_data, #Database, where the visual data is
-  aes(fill=fill_data) #Variable that dictates 
+  data=visual_data, #Database, where the visual data
+  aes(fill=fill_data) #Variable that dictates fill of each municipality
   ) +
   #Map Background
   geom_raster(
