@@ -53,75 +53,35 @@ ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulator"))),
   sidebarLayout(position = "right",
                 sidebarPanel(h4(strong("Migrationfactors:")),
-                             sliderInput(inputId = "politics",
-                                         label = "Political Orientation",
-                                         min = 0,
-                                         max = 6,
-                                         value = 1),
-                             sliderInput(inputId = "slider2",
-                                         label = "Shopping centre/grocery store proximity",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider3",
-                                         label = "Entertainment possibilities",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider4",
-                                         label = "Proximity to work",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider5",
-                                         label = "Houspreises/Rental prices",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider6",
-                                         label = "Taxes",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3),
-                             sliderInput(inputId = "slider7",
-                                         label = "Public Transport",
-                                         min = 1,
-                                         max = 5,
-                                         value = 3)
+                    sliderInput(inputId = "politics",
+                    label = "Political Orientation",
+                    min = 0,
+                    max = 6,
+                    value = 1)
                 ),
                 mainPanel(("The following map shows the population of the region Baden. By moving the sliders on the right the migration factors can be altered and the map will show the effect it."),
-                          plotOutput("map")
+                          plotOutput("map"),
+                          tableOutput("values")
+                          
                 )
   )
 )
-
 # Define server logic ----
 server <- function(input, output) {
   sliderValues <- reactive({
-    
     data.frame(
-      Name = c("politics",
-               "slider2",
-               "slider3",
-               "slider4",
-               "slider5",
-               "slider6",
-               "slider7"),
-      Value = as.character(c(input$politics,
-                             input$slider2,
-                             input$slider3,
-                             input$slider4,
-                             input$slider5,
-                             input$slider6,
-                             input$slider7,
-                             )),
+      Name = c("politics"),
+      Value = as.character(c(input$politics)),
       stringsAsFactors = FALSE)
     
-  })ss
+  })
+  output$values <- renderTable({
+    sliderValues()
+  })
   
-  if( sliderValues(input$politics) == 0){
-  
-    output$map <- renderPlot({ 
+
+    output$map <- renderPlot({
+      if (sliderValues()[1,2]==0) {
       baden_map <- ggplot(
         data=gemeinden_coords,
         aes(fill=Gesamtbevölkerung)
@@ -163,10 +123,8 @@ server <- function(input, output) {
           panel.grid.minor = element_blank()
         ) 
       baden_map
-      
+      }
     }) 
-  
-  }
 }
 # Run the app ----
 shinyApp(ui = ui, server = server)
