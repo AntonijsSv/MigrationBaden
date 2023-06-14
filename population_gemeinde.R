@@ -30,7 +30,6 @@ politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only t
       politics_improved[nrow(politics_improved)+1,] <- row #Add the new row to the new database
     }
   }
-  
 
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
 gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
@@ -63,8 +62,8 @@ map500 <- raster("Baden500_excess.tif")%>%
 baden_map <- function(visual_data, fill_data, legend)
 { 
   ggplot(
-  data=visual_data, #Database, where the visual data is
-  aes(fill=fill_data) #Variable that dictates 
+  data=visual_data, #Database, where the visual data
+  aes(fill=fill_data) #Variable that dictates fill of each municipality
   ) +
   #Map Background
   geom_raster(

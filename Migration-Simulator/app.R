@@ -128,7 +128,10 @@ server <- function(input, output) {
         ) 
       
     }
+
     #defininf visualisation of which political party in map based on input value of slider
+
+
       if (sliderValues()[1,2]==0) {
         baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
       }
