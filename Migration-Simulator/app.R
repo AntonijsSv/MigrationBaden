@@ -53,14 +53,14 @@ map500 <- raster("Maps/Baden500_excess.tif")%>%
 ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulator"))),
   sidebarLayout(position = "right",
-                sidebarPanel(h4(strong("Migrationfactors:")),
+                sidebarPanel(h4(strong("Slider:")),
                     sliderInput(inputId = "politics",
                     label = "Political Orientation",
                     min = 0,
                     max = 6,
                     value = 0)
                 ),
-                mainPanel(("The following map shows the population of the region Baden. By moving the sliders on the right the migration factors can be altered and the map will show the effect it."),
+                mainPanel(("The following map shows the population of the region Baden. By moving the slider on the right the map will display the popularity of different political parties."), br("1=GPS, 2=SP, 3=GLP, 4=CVP, 5=FDP, 6=SVP"),
                           plotOutput("map"),
                           tableOutput("values")
                 )
