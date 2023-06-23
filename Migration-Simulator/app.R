@@ -1,4 +1,3 @@
-#
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 #
@@ -49,18 +48,70 @@ map500 <- raster("Maps/Baden500_excess.tif")%>%
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
   rename(relief = `Baden500_excess`)
-
+legend_options <- c("GPS %", "SP %", "GLP %", "CVP %", "FDP %", "SVP %")
+party_options <- c(6,4,7,3,2,5)
+baden_map <- function(visual_data, fill_data, legend)
+{ 
+  print("map loading")
+  ggplot(
+    data=visual_data, #Database, where the visual data
+    aes(fill=fill_data) #Variable that dictates fill of each municipality
+  ) +
+    #Map Background
+    geom_raster(
+      data = map500,
+      inherit.aes = FALSE,
+      aes(x,y,
+          alpha=relief 
+          #since fill is already used for the data, alpha values are used to paint the map
+          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
+      ),
+    ) +
+    scale_alpha(#How to fill the map
+      name = "",
+      range = c(0.9,0),
+      guide = F
+    ) +
+    geom_sf( #Create the municipality Boundaries
+      data = gemeinden_coords,
+      color = "transparent",
+      size = 0.5) +
+    
+    scale_fill_viridis(#Set a custom fill for the data to be visualized
+      option = "magma",
+      alpha = 0.6, #make them slightly transparent to see map background
+      begin = 0.1,
+      end = 0.9,
+      direction = -1,
+      name = legend
+    ) +
+    #remove visual clutter
+    theme_minimal() +
+    theme(
+      axis.line = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks = element_blank(),
+      axis.title = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+    ) 
+ 
+}
+baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
 ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulator"))),
   sidebarLayout(position = "right",
-                sidebarPanel(h4(strong("Migrationfactors:")),
+                sidebarPanel(h4(strong("Slider:")),
                     sliderInput(inputId = "politics",
                     label = "Political Orientation",
                     min = 0,
                     max = 6,
                     value = 0)
                 ),
-                mainPanel(("The following map shows the population of the region Baden. By moving the sliders on the right the migration factors can be altered and the map will show the effect it."),
+                mainPanel(("The following map shows the population of the region Baden. 
+                          By moving the slider on the right the map will display the popularity of different political parties."),
+                          br("1=GPS, 2=SP, 3=GLP, 4=CVP, 5=FDP, 6=SVP"),
                           plotOutput("map"),
                           tableOutput("values")
                 )
@@ -75,79 +126,22 @@ server <- function(input, output) {
       stringsAsFactors = FALSE)
     
   })
-  output$values <- renderTable({
-    sliderValues()
-  })
+
   
   output$map <- renderPlot({
-    baden_map <- function(visual_data, fill_data, legend)
-    { 
-      ggplot(
-        data=visual_data, #Database, where the visual data
-        aes(fill=fill_data) #Variable that dictates fill of each municipality
-      ) +
-        #Map Background
-        geom_raster(
-          data = map500,
-          inherit.aes = FALSE,
-          aes(x,y,
-              alpha=relief 
-              #since fill is already used for the data, alpha values are used to paint the map
-              #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
-          ),
-        ) +
-        scale_alpha(#How to fill the map
-          name = "",
-          range = c(0.9,0),
-          guide = F
-        ) +
-        geom_sf( #Create the municiplality Boundaries
-          data = gemeinden_coords,
-          color = "transparent",
-          size = 0.5) +
-        
-        scale_fill_viridis(#Set a custom fill for the data to be visualised
-          option = "magma",
-          alpha = 0.4, #make them slightly transparent to see map background
-          begin = 0.1,
-          end = 0.9,
-          direction = -1,
-          name = legend
-        ) +
-        #remove visual clutter
-        theme_minimal() +
-        theme(
-          axis.line = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-        ) 
-      
+    visual_option <- (sliderValues()[1,2])
+    numeric_visual_option <- as.numeric(visual_option)
+    #Visualize all the maps
+    if (visual_option==0) {
+      baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
     }
-      if (sliderValues()[1,2]==0) {
-        baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
-      }
-      if (sliderValues()[1,2]==1) {
-        baden_map(politics_improved, politics_improved$GPS, "GPS %")
-      }
-      if (sliderValues()[1,2]==2) {
-        baden_map(politics_improved, politics_improved$SP, "SP %")
-      }
-      if (sliderValues()[1,2]==3) {
-        baden_map(politics_improved, politics_improved$GLP, "GLP %")
-      }
-      if (sliderValues()[1,2]==4) {
-        baden_map(politics_improved, politics_improved$CVP, "CVP %")
-      }
-      if (sliderValues()[1,2]==5) {
-        baden_map(politics_improved, politics_improved$SP, "FDP %")
-      }
-      if (sliderValues()[1,2]==6) {
-        baden_map(politics_improved, politics_improved$SVP, "SVP %")
-      }
+    else{if(visual_option==1){baden_map(politics_improved, politics_improved$GPS,"GPS %")}
+    else{if(visual_option==2){baden_map(politics_improved, politics_improved$SP,"SP %")}
+    else{if(visual_option==3){baden_map(politics_improved, politics_improved$GLP,"GLP %")}
+    else{if(visual_option==4){baden_map(politics_improved, politics_improved$CVP,"CVP %")}
+    else{if(visual_option==5){baden_map(politics_improved, politics_improved$FDP,"FDP %")}
+    else{baden_map(politics_improved, politics_improved$SVP,"SVP %")}
+      }}}}}
     }) 
 }
 # Run the app ----
