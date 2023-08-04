@@ -48,6 +48,7 @@ map500 <- raster("Maps/Baden500_excess.tif")%>%
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
   rename(relief = `Baden500_excess`)
+
 legend_options <- c("GPS %", "SP %", "GLP %", "CVP %", "FDP %", "SVP %")
 party_options <- c(6,4,7,3,2,5)
 baden_map <- function(visual_data, fill_data, legend)
@@ -109,10 +110,12 @@ ui <- fluidPage(
                     max = 6,
                     value = 0)
                 ),
+
+                #Main Part of Website (displaying map & Slider values)
                 mainPanel(("The following map shows the population of the region Baden. 
                           By moving the slider on the right the map will display the popularity of different political parties."),
                           br("1=GPS, 2=SP, 3=GLP, 4=CVP, 5=FDP, 6=SVP"),
-                          plotOutput("map"),
+                           plotOutput("map"),
                           tableOutput("values")
                 )
   )
@@ -120,13 +123,18 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output) {
   sliderValues <- reactive({
-    data.frame(
+    data.frame(#getting data about input of slider
       Name = c("politics"),
       Value = as.character(c(input$politics)),
       stringsAsFactors = FALSE)
     
   })
 
+  output$values <- renderTable({#Table displays the input values of slider
+    sliderValues()
+  })
+
+  
   
   output$map <- renderPlot({
     visual_option <- (sliderValues()[1,2])
@@ -142,6 +150,7 @@ server <- function(input, output) {
     else{if(visual_option==5){baden_map(politics_improved, politics_improved$FDP,"FDP %")}
     else{baden_map(politics_improved, politics_improved$SVP,"SVP %")}
       }}}}}
+
     }) 
 }
 # Run the app ----
