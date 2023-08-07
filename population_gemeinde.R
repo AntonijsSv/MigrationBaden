@@ -54,7 +54,7 @@ gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
   #writeRaster(map500_excess, "Baden500_excess.tif", format="GTIFF")
 
   
-map500 <- raster("Baden500_excess.tif")%>% 
+map500 <- raster("Maps/Baden500_excess.tif")%>% 
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
   rename(relief = `Baden500_excess`)
