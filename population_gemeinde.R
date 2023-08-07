@@ -41,6 +41,12 @@ gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of
 gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>% 
   filter(!is.na(Gemeinde))
 
+forest_geo <- read_sf("Forests/Mischungsgrad_Waelder_2015_LV95/Mischungsgrad_LFI_ID164_20_2015_Metadata_LV95.shp")
+
+ggplot()+
+  geom_sf(
+    data = forest_geo
+  )
 #Code to create the base map, as the swiss-wide map is too large for github
   #excess <- 2000
   #e_range <- c(min(gemeinden_coords$E_MIN)-excess,max(gemeinden_coords$E_MAX)+excess) 
@@ -109,4 +115,5 @@ baden_map <- function(visual_data, fill_data, legend)
 }
 baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung") #visualizes the entire population
 baden_map(politics_improved, politics_improved$GPS, "GPS %") #Visualizes these parties:
+baden_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Gesamtbevölkerung")
 #GLP, SP, GLP, CVP, FDP, SVP
