@@ -1,16 +1,18 @@
 library(ggplot2) #Access functions to e.g. plot data (ggplot) and read files(readxl/readr)
 library(dplyr)
+library(tidyverse) 
 library(sf) # spatial data handling
 library(raster)
 library(viridis) # viridis color scale
 library(readxl)
 library(readr)
 library(lintr)
+library(xlsx)
 
 #Open 2 databases, the first one contains coordinate system and population
 #each municipality is depicted as 1 hectare in STATPOP, so cannot be used alone
 coords_gmde <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
-  select(E_KOORD,N_KOORD,GMDE) 
+  dplyr::select(E_KOORD,N_KOORD,RELI,GMDE) 
 gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
   mutate(GMDE=`Gmd-Nr.`) #give the municipality number column the same name as in coords_gmde
 
@@ -28,11 +30,19 @@ pop_data <- read_csv("PopDataperHectare.csv")%>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) 
 #filters data to only show that around Baden
 
+#Buildings
+building_data <- read_delim("GebäudeStatistik/GWS2021.csv", 
+              delim = ";", escape_double = FALSE, trim_ws = TRUE) %>%
+  filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2]))
+
+  right_join(pop_data, by = c(`N_KOORD`=`N_KOORD`,`E_KOORD`=`E_KOORD`))
+
+write.csv(building_data, "Building_per_ha_Baden.csv")
+
 map500 <- raster("Maps/Baden_500.tif")%>% #Map background
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
   rename(relief = `Baden_500`)
-
 
 
 baden_hectare <- function(visual_data,e_coord,n_coord, fill_data) {
@@ -53,10 +63,12 @@ baden_hectare <- function(visual_data,e_coord,n_coord, fill_data) {
     ) +
 #visualization of data
     geom_tile(aes(fill=cut(fill_data,
-                           c(1,4,7,16,41,121,Inf)
-    )
-    ),
-    ) + 
+                           c(1,4,7,16,41,121,Inf))
+                  ),
+              ) + 
+    #geom_tile(aes(fill=fill_data
+    #),
+    #) + 
     #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
     #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
     scale_fill_manual(
@@ -69,6 +81,10 @@ baden_hectare <- function(visual_data,e_coord,n_coord, fill_data) {
       labels=c("1-3","4-6","7-15","16-40","41-120",">120"),
       name="population per ha",
       na.value = "green") +
+    #scale_fill_gradient(
+    #  name="buildings per ha",
+    #  na.value = "green"
+    #)+
     #remove visual clutter
     theme_minimal()+
     theme(
@@ -81,4 +97,5 @@ baden_hectare <- function(visual_data,e_coord,n_coord, fill_data) {
       panel.grid.minor = element_blank(),
     )
 }
+
 baden_hectare(pop_data,pop_data$E_KOORD, pop_data$N_KOORD, pop_data$B21BTOT)
