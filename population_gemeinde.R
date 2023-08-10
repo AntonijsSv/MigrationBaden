@@ -11,6 +11,7 @@ library(readxl)
 library(shiny)
 library(magick)
 library(leaflet)
+library(ggrepel)
 #canton_geo = read_sf("Boundary_Data/g2k23.shp")
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
 
@@ -39,6 +40,9 @@ gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of
 #for all municipalities outside Baden, this will create NA, which is then filtered out
 gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>% 
   filter(!is.na(Gemeinde))
+
+baden_text <- as.data.frame(sf::st_coordinates(sf::st_centroid(gemeinden_coords)))
+baden_text$name <- gemeinden_coords$GMDNAME
 
 forest_geo <- read_sf("Forests/Mischungsgrad_Waelder_2015_LV95/Mischungsgrad_LFI_ID164_20_2015_Metadata_LV95.shp")
 
@@ -99,6 +103,10 @@ baden_map <- function(visual_data, fill_data, legend)
     direction = -1,
     name = legend
   ) +
+  #geom_label_repel(data=baden_text, aes(x = X,
+  #                                     y = Y,
+  #                                     label = name),
+  #                colour = "white") +
   #remove visual clutter
   theme_minimal() +
   theme(
