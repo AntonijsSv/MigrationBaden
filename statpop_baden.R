@@ -4,7 +4,7 @@ library(readr)
 library(readxl)
 library(xlsx)
 
-communes_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
+communes_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% 
   mutate(GMDE=`Gmd-Nr.`) #give the municipality number column the same name as in coords_gmde
 
 #combines the above datasets and groups them by GMDE,
@@ -15,24 +15,24 @@ communes_baden <- read_excel("2021_Gemeinden.xlsx") %>%
 
 
 
-statpop <- c("statpop/STATPOP2021.csv",
-             "statpop/STATPOP2020.csv",
-             "statpop/STATPOP2019.csv",
-             "statpop/STATPOP2018.csv",
-             "statpop/STATPOP2017.csv",
-             "statpop/STATPOP2016.csv",
-             "statpop/STATPOP2015.csv",
-             "statpop/STATPOP2014.csv",
-             "statpop/STATPOP2013.csv",
-             "statpop/STATPOP2012.csv",
-             "statpop/STATPOP2011.csv")
+statpop <- c("analysis/statpop/STATPOP2021.csv",
+             "analysis/statpop/STATPOP2020.csv",
+             "analysis/statpop/STATPOP2019.csv",
+             "analysis/statpop/STATPOP2018.csv",
+             "analysis/statpop/STATPOP2017.csv",
+             "analysis/statpop/STATPOP2016.csv",
+             "analysis/statpop/STATPOP2015.csv",
+             "analysis/statpop/STATPOP2014.csv",
+             "analysis/statpop/STATPOP2013.csv",
+             "analysis/statpop/STATPOP2012.csv",
+             "analysis/statpop/STATPOP2011.csv")
 
 years <- c(2021:2011)
 
 for (i in 1:length(statpop)) {
   print(years[i])
   if (years[i] >=2020) {
-    NOLOC_yr <- paste0("statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
+    NOLOC_yr <- paste0("analysis/statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
     
     coords_baden <- read_delim(NOLOC_yr, delim = ";", escape_double = FALSE, trim_ws = TRUE, show_col_types = FALSE)%>%
       select(E_KOORD,N_KOORD,RELI,GDENR)%>%
@@ -60,7 +60,7 @@ for (i in 1:length(statpop)) {
       
   }
   else {
-    NOLOC_yr <- paste0("statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
+    NOLOC_yr <- paste0("analysis/statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
     
     coords_baden <- read_delim(NOLOC_yr, show_col_types = FALSE)%>%
       select(E_KOORD,N_KOORD,RELI,GDENR)%>%

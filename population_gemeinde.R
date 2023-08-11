@@ -15,7 +15,7 @@ library(ggrepel)
 #canton_geo = read_sf("Boundary_Data/g2k23.shp")
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
 
-politics <- read_excel("politicalparties.xlsx",col_names = F)
+politics <- read_excel("analysis/politicalparties.xlsx",col_names = F)
 colnames(politics) <- c("Gemeinde","party_num", "party", "percentage") #name the columns
 politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only these parties: FDP, CVP, SP, SVP, GLP, GPS
 
@@ -33,7 +33,7 @@ politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only t
   }
 
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
-gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
+gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
   mutate(GMDNR=`Gmd-Nr.`) #Rename certain column to be the same in both files
 
 # Join both files, this is done using the column GMDNR
@@ -44,7 +44,7 @@ gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
 baden_text <- as.data.frame(sf::st_coordinates(sf::st_centroid(gemeinden_coords)))
 baden_text$name <- gemeinden_coords$GMDNAME
 
-forest_geo <- read_sf("Forests/Mischungsgrad_Waelder_2015_LV95/Mischungsgrad_LFI_ID164_20_2015_Metadata_LV95.shp")
+forest_geo <- read_sf("analysis/Forests/Mischungsgrad_Waelder_2015_LV95/Mischungsgrad_LFI_ID164_20_2015_Metadata_LV95.shp")
 
 ggplot()+
   geom_sf(

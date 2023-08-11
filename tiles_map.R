@@ -11,9 +11,9 @@ library(xlsx)
 
 #Open 2 databases, the first one contains coordinate system and population
 #each municipality is depicted as 1 hectare in STATPOP, so cannot be used alone
-coords_gmde <- read_delim("STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
+coords_gmde <- read_delim("analysis/statpop/NOLOC/STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
   dplyr::select(E_KOORD,N_KOORD,RELI,GMDE) 
-gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% 
+gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% 
   mutate(GMDE=`Gmd-Nr.`) #give the municipality number column the same name as in coords_gmde
 
 #combines the above datasets and groups them by GMDE,
@@ -26,18 +26,19 @@ x_range <- range(gmd_data$E_KOORD)
 y_range <- range(gmd_data$N_KOORD)
 
 #Population data per hectare
-pop_data <- read_csv("PopDataperHectare.csv")%>%
+pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) 
 #filters data to only show that around Baden
 
 #Buildings
+#FILE TOO LARGE FOR GITHUB, THIS PART DOESNT WORK
 building_data <- read_delim("GebäudeStatistik/GWS2021.csv", 
               delim = ";", escape_double = FALSE, trim_ws = TRUE) %>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2]))
 
   right_join(pop_data, by = c(`N_KOORD`=`N_KOORD`,`E_KOORD`=`E_KOORD`))
 
-write.csv(building_data, "Building_per_ha_Baden.csv")
+write.csv(building_data, "analysis/Building_per_ha_Baden.csv")
 
 map500 <- raster("Maps/Baden_500.tif")%>% #Map background
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
