@@ -26,10 +26,10 @@ write.xlsx(rent, "C:/Users/colte/Downloads/rent_R.xlsx", sheetName = "Sheet1",
            col.names = F, row.names = F, append = F)
 
 
-Houseprices <- read_excel("Houseprices.xlsx", sheet = "Sheet1")
+Houseprices <- read_excel("analysis/Houseprices.xlsx", sheet = "Sheet1")
 
-house <- read_excel("Houseprices.xlsx", sheet = "Sheet2")
-rent <- read_excel("Houseprices.xlsx", sheet = "Sheet3")
+house <- read_excel("analysis/Houseprices.xlsx", sheet = "Sheet2")
+rent <- read_excel("analysis/mHouseprices.xlsx", sheet = "Sheet3")
 
 
 
@@ -49,7 +49,7 @@ for (i in 1:nrow(Houseprices)) {
 write.xlsx(Houseprices, "C:/Users/colte/Downloads/Houseprices_R.xlsx", sheetName = "Sheet1", 
            col.names = TRUE, row.names = TRUE, append = F)
 
-Houseprices <- read_excel("Houseprices_R.xlsx", sheet = "Sheet1")
+Houseprices <- read_excel("analysis/Houseprices_R.xlsx", sheet = "Sheet1")
 
 percent_product <- function(values) {
   cumprod <- 1
