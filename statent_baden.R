@@ -8,25 +8,16 @@ communes_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>%
   mutate(GMDE=`Gmd-Nr.`) #mutate adds a new column to communes_baden, 
 #this mutation just makes a new column called GMDE, it takes and copies the data from the Gmd-Nr.
 
-#combines the above datasets and groups them by GMDE,
-#for all municipalities outside Baden, this will create NA, which is then filtered out
-
-#Get the coordinate range of municipalites
-#This range is the reason why STATENT data cannot be used by itself and gemeinden_baden also needs to be used
-
-
 
 years <- c(2020:2011) #List of all the years for which we have statent data
 
-for (i in 1:length(years)) {#For the amount of items in the list statpop
+for (i in 1:length(years)) {#For the amount of items in the list years
   #aka for the amount of files
-  #i will take on different values each time it goes thru the loop, in this case 1 to the number of files (10)
-  #each time this loop occurs, i will increase by 1 
   print(years[i])#will take the i-th item in the list, which will be the year of the file
   NOLOC_yr <- paste0("analysis/statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
   #paste0 puts these things together without adding any spaces inbetween
-  #here i create the filename for the file that contains coordinates and commune numbers, this data will then be chopped down
-  #to only contain coordinates for communes in Baden, these coordinates will then be used to chop down the actual data set
+  #create the filename for the file that contains coordinates and commune numbers, this data will then be chopped down...
+  #...to only contain coordinates for communes in Baden, these coordinates will then be used to chop down the actual data set
   
     
   if (years[i] >= 2020) {

@@ -8,12 +8,6 @@ communes_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>%
   mutate(GMDE=`Gmd-Nr.`) #mutate adds a new column to gemeinden_baden, 
 #this mutation just makes a new column called GMDNR, it takes and copies the data from the Gmd-Nr.
 
-#combines the above datasets and groups them by GMDE,
-#for all municipalities outside Baden, this will create NA, which is then filtered out
-
-#Get the coordinate range of municipalites
-#This range is the reason why statpop data is used and not just gemeinden_baden
-
 
 
 statpop <- c("analysis/statpop/STATPOP2021.csv",
@@ -35,9 +29,7 @@ years <- c(2021:2011)
 
 for (i in 1:length(statpop)) {#For the amount of items in the list statpop
   #aka for the amount of files
-  #i will take on different values each time it goes thru the loop, in this case 1 to the number of files (10)
-  #each time this loop occurs, i will increase by 1 
-  print(years[i])#will take the i-th item in the list, which will be the year of the file
+  print(years[i])#print which year is being worked on
   if (years[i] >=2020) {#if the year is 2020 or later
     NOLOC_yr <- paste0("analysis/statpop/NOLOC/STATPOP",years[i],"_NOLOC.csv")
     #paste0 puts these things together without adding any spaces inbetween
