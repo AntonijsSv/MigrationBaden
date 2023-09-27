@@ -42,6 +42,7 @@ for (i in 1:nrow(data1)) {
     
     average <- mean(percent_list)
     average_list <- c(average_list, average)
+    x <- x-1
   }  
 }
 
