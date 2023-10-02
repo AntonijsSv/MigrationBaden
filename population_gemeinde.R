@@ -32,6 +32,7 @@ politics <- filter(politics, party_num %in% c(1,2,3,4,31,13))# Filter for only t
     }
   }
 
+  
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
 gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
   mutate(GMDNR=`Gmd-Nr.`) #Rename certain column to be the same in both files
@@ -69,6 +70,8 @@ map500 <- raster("Maps/Baden500_excess.tif")%>%
   as.data.frame() %>%
   rename(relief = `Baden500_excess`)
 
+
+
 baden_map <- function(visual_data, fill_data, legend)
 { 
   ggplot(
@@ -97,7 +100,7 @@ baden_map <- function(visual_data, fill_data, legend)
   
   scale_fill_viridis(#Set a custom fill for the data to be visualised
     option = "magma",
-    alpha = 0.4, #make them slightly transparent to see map background
+    alpha = 0.6, #make them slightly transparent to see map background
     begin = 0.1,
     end = 0.9,
     direction = -1,
