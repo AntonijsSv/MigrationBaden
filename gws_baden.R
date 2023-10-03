@@ -34,7 +34,8 @@ for (i in 1:length(years)) {
       filter(E_KOORD %in% (e_range[1]:e_range[2]), N_KOORD %in% (n_range[1]:n_range[2]))
     
     if (years[i] == 2021) {
-      gws_baden <- gws_yr #Adds 1st dataset to baden df
+      gws_baden <- gws_yr#Adds 1st dataset to baden df
+      
     }
     else {
       dplyr::select(gws_yr, -c(X_KOORD,Y_KOORD,N_KOORD,E_KOORD)) #Removes Coordinates, as they stay constant throughout the years
@@ -64,6 +65,6 @@ for (i in 1:length(years)) {
   }
   
 }
+
 write.csv(gws_baden,"GWS_Baden_2021_2012.csv")
 
-?full_join()
