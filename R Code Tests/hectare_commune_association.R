@@ -4,21 +4,24 @@ library(dplyr)
 library(sf) # spatial data handling
 library(raster)
 library(viridis) # viridis color scale
-#library(cowplot)
 library(readr)
 library(readxl)
-#library(shiny)
-#library(magick)
-#library(leaflet)
-library(ggrepel)
 library(xlsx)
 library(ggnewscale)
 library(ggplot2)
+#library(shiny)
+#library(magick)
+#library(leaflet)
+#library(cowplot)
+#library(ggrepel)
 # hectare data filtering ----
-coords_gmde <- read_delim("analysis/statpop/NOLOC/STATPOP2021_NOLOC.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)%>%
+coords_gmde <- read_delim("analysis/statpop/NOLOC/STATPOP2021_NOLOC.csv",
+                          delim = ";", escape_double = FALSE, trim_ws = TRUE) %>%
   dplyr::select(E_KOORD,N_KOORD,RELI,GDENR) 
 gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% 
   mutate(GDENR=`Gmd-Nr.`) #give the municipality number column the same name as in coords_gmde
+
+baden_commune_names <- gemeinden_baden$Gemeinde #The names of all the communes
 
 #combines the above datasets and groups them by GMDE,
 #for all municipalities outside Baden, this will create NA, which is then filtered out
@@ -40,6 +43,21 @@ pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) 
 
 #filters data to only show that around Baden
+
+# Open hectare data files ----
+
+gws <- read_csv("analysis/GWS/GWS_Baden_2021_2012.csv") %>%
+  filter(!is.na(E_KOORD.x), !is.na(N_KOORD.x))%>%
+  mutate(E_KOORD = E_KOORD.x, N_KOORD = N_KOORD.x)%>%
+  relocate(N_KOORD)%>%
+  relocate(E_KOORD)
+
+statent <- read_csv("analysis/STATENT/STATENT_Baden_2020_2012.csv")%>%
+  filter(!is.na(E_KOORD.x), !is.na(N_KOORD.x))%>%
+  mutate(E_KOORD = E_KOORD.x, N_KOORD = N_KOORD.x)%>%
+  relocate(N_KOORD)%>%
+  relocate(E_KOORD)
+
 # shp filtering ----
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
 gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
@@ -51,23 +69,60 @@ gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>%
   filter(!is.na(Gemeinde))
 
 # sf conversion ----
-pop_data_sf <- st_as_sf(pop_data, coords=(c("E_KOORD","N_KOORD")))
-#Take popdata and turn it from a basic data frame into a sf file, give it coordinates
-pop_data_sf$centre <- st_centroid(pop_data_sf)
-hectare_size <- 100
-pop_data_sf <- st_buffer(pop_data_sf$centre,0.5*hectare_size,endCapStyle="SQUARE")#%>%
-#  st_simplify()
-#pop_data_sf <- st_make_grid(pop_data_sf,hectare_size)
-#?st_simplify
-pop_data_sf <- st_set_crs(pop_data_sf,st_crs(gemeinden_coords))
-#set the same coordinated system as gemeinden_coords
-ha_communes <- st_join(pop_data_sf, gemeinden_coords) %>%
-#Every hectare (point) in pop_data_sf is checked in which commune (mutlipolygon) its located
-#every hectare is assigned to a commune
-  filter(!is.na(Gemeinde))
-#remove all points/hectares not inside a commune
-# ggplot ----
+sf_conversion <- function(df_file,x,y){
+#'df_file is the input file, it requires an x and y coordinate column
+#'ensure that the x and y columns do not have NAs: df %>% filter(!is.na(column))
+#'x and y NEED TO BE STRINGS, should be the name of the column with the coordinates
+#'If these columns do not have names, use: colnames(df)[x] <- "E_KOORD"
+  sf_file <- st_as_sf(df_file, coords=(c(x,y)))
+  #Take popdata and turn it from a basic data frame into a sf file, give it coordinates
+  sf_file$centre <- st_centroid(sf_file)
+  hectare_size <- 100
+  sf_file <- st_buffer(sf_file$centre,0.5*hectare_size,endCapStyle="SQUARE")#%>%
+  #  st_simplify()
+  #pop_data_sf <- st_make_grid(pop_data_sf,hectare_size)
+  #?st_simplify
+  sf_file <- st_set_crs(sf_file,st_crs(gemeinden_coords))
+  #set the same coordinated system as gemeinden_coords
+  sf_file <- st_join(sf_file, gemeinden_coords) %>%
+    #Every hectare (point) in pop_data_sf is checked in which commune (mutlipolygon) its located
+    #every hectare is assigned to a commune
+    filter(!is.na(Gemeinde))
+  #remove all points/hectares not inside a commune
+  return(sf_file)
+}
 
+pop_ha_c <- sf_conversion(pop_data,"E_KOORD","N_KOORD")
+pop <- dplyr::select(pop_ha_communes,geometry,GMDNAME)
+
+gws_ha <- sf_conversion(gws,"E_KOORD","N_KOORD")
+statent_ha <- sf_conversion(statent,"E_KOORD","N_KOORD")
+
+#st_write(pop_ha_communes,"analysis/PopDataperHectare.shp")
+
+gws_ha_c <- st_join(gws_ha,pop)%>%
+  relocate(geometry)%>%
+  relocate(GMDNAME.y)%>%
+  relocate(GMDNAME.x)
+
+statent_ha_c <- st_join(statent_ha,pop)%>%
+  relocate(geometry)%>%
+  relocate(GMDNAME.y)%>%
+  relocate(GMDNAME.x) #%>%
+  #filter(GMDNAME.x != GMDNAME.y)
+#!!!!!
+#ISSUE: some hectares are allocated to different communes????
+#!!!!!
+
+pop_ha_communes_df <- st_drop_geometry(pop_ha_communes)
+gws_ha_c_df <- st_drop_geometry(gws_ha_c)
+statent_ha_c_df <- st_drop_geometry(statent_ha_c)
+
+write.csv(gws_ha_c_df,"/analysis/GWS_21_12_wCommunes")
+write.csv(statent_ha_c_df,"/analysis/STATENT_21_12_wCommunes")
+
+
+# ggplot ----
 map500 <- raster("Maps/Baden500_excess.tif")%>% 
   as("SpatialPixelsDataFrame") %>% #Change the file type to convert into a dataframe, ggplot only accepts  data frames
   as.data.frame() %>%
@@ -99,9 +154,18 @@ place_names <- rep("transparent",21)
 place_names[16] <- "black"
 
 
-baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_communes,fill_data_communes,e_coord,n_coord,legend) 
+baden_hectare_communes <- function(visual_data_ha,fill_data_ha,
+                                   visual_data_communes,fill_data_communes,
+                                   legend_ha,legend_commune) 
 {
+  #'visual data is the data frame with the data
+  #'fill data is the the column in the visual data data frame that will be visualized
+  #'_ha -> everything with hectares
+  #'_communes -> everything with communes
+  #'!!!both dataframes need to be converted to sf files -> use sf_conversion function
+  #'legend is the title of the legend
   ggplot() + 
+    #The map background
     geom_raster(
       data = map500,
       inherit.aes = FALSE,
@@ -112,8 +176,10 @@ baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_commu
       ),
     ) +
     scale_fill_identity() +
+    
     new_scale_fill() +
-    #visualization of data
+    
+    #visualization of commune data
     geom_sf( #Create the municiplality Boundaries
       data = gemeinden_coords,
       aes(fill=fill_data_communes),
@@ -126,9 +192,12 @@ baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_commu
       begin = 0.1,
       end = 0.9,
       direction = -1,
-      name = legend
+      name = legend_commune
     ) +
+    
     new_scale_fill()+
+    
+    #
     geom_sf(data=visual_data_ha, 
             aes(fill=fill_data_ha),
             colour = "transparent",
@@ -139,11 +208,12 @@ baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_commu
     #) + 
     #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
     #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
-    scale_fill_viridis(name="population per ha",
+    scale_fill_viridis(name=legend_ha,
                        begin=0) +
     
-    new_scale_fill() + #Add a new layer to overlay place names above the data
+    new_scale_fill() + 
     
+    #Add a new layer to overlay place names above the data
     geom_raster(
       data = map500,
       inherit.aes = FALSE,
@@ -152,6 +222,8 @@ baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_commu
       ),
     ) +
     scale_fill_identity() +
+    
+    #Theme aesthetics
     theme_minimal()+
     theme(
       axis.line = element_blank(),
@@ -164,6 +236,17 @@ baden_hectare_communes <- function(visual_data_ha,fill_data_ha,visual_data_commu
     )
 }
 
-baden_hectare_communes(ha_communes,ha_communes$B21BTOT,gemeinden_coords, gemeinden_coords$Gesamtbevölkerung,ha_communes$E_CNTR, ha_communes$N_CNTR,"Gesamtbevölkerung")
+baden_hectare_communes(pop_ha_communes,pop_ha_communes$B21BTOT,
+                       gemeinden_coords, gemeinden_coords$Gesamtbevölkerung,
+                       "population per ha","Gesamtbevölkerung")
+baden_hectare_communes(gws_ha_communes,gws_ha_communes$GTOT.x,
+                       gemeinden_coords, gemeinden_coords$Gesamtbevölkerung,
+                       "buildings per ha","Gesamtbevölkerung")
+baden_hectare_communes(gws_ha_c,gws_ha_c$GTOT.x,
+                       gemeinden_coords, gemeinden_coords$Gesamtbevölkerung,
+                       "buildings per ha","Gesamtbevölkerung")
+baden_hectare_communes(statent_ha_c,statent_ha_c$B08T_2020,
+                       gemeinden_coords, gemeinden_coords$Gesamtbevölkerung,
+                       "workplaces per ha","Gesamtbevölkerung")
 
  
