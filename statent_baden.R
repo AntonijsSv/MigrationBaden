@@ -74,7 +74,7 @@ for (i in 1:length(years)) {#For the amount of items in the list years
     statent_baden <- statent_yr #Adds 1st dataset to baden
   }
   else {
-    statent_yr <- dplyr::select(statent_yr, -c(paste0("N_KOORD","_",years[i]),
+    dplyr::select(statent_yr, -c(paste0("N_KOORD","_",years[i]),
                                  paste0("E_KOORD","_",years[i])))
     #Removes Coordinates, as they stay constant throughout the years and years as they are already in the col names
     statent_baden <- full_join(statent_baden, statent_yr, by="RELI") 
