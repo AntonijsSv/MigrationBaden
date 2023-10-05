@@ -61,19 +61,21 @@ for (i in 1:length(years)) {#For the amount of items in the list years
   #Here the big file is created
   statent_col <- colnames(statent_yr)
   #I take all the names of the columns and put it in a new list
-  for (j in 4:ncol(statent_yr)) {
+  for (j in 1:ncol(statent_yr)) {
     #for all the columns with data, this code will add the year to the name of the columns
     #we dont want to change the names of columns with coordinates (1-3) as we use them to join datasets between the years, so they have to be the same
-    colnames(statent_yr)[j] <- paste0(statent_col[j],"_",years[i])
-    #The name of the j-th column is its original name + the year of the data
+    if (statent_col[j]!= "RELI") {
+        colnames(statent_yr)[j] <- paste0(statent_col[j],"_",years[i])
+        #The name of the j-th column is its original name + the year of the data
+        }
   }
   if (years[i] == 2020) {
     #if its the first year in the data set aka 2020, then you create a new dataset that for now is just statpop data for that year
-    statent_baden <- statent_yr #Adds 1st dataset to bade
+    statent_baden <- statent_yr #Adds 1st dataset to baden
   }
   else {
-    dplyr::select(statent_yr, -c(N_KOORD,
-                                 E_KOORD)) 
+    dplyr::select(statent_yr, -c(paste0("N_KOORD","_",years[i]),
+                                 paste0("E_KOORD","_",years[i])))
     #Removes Coordinates, as they stay constant throughout the years and years as they are already in the col names
     statent_baden <- full_join(statent_baden, statent_yr, by="RELI") 
     #here you join the data from the years together
