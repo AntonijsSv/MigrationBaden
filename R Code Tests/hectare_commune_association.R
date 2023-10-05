@@ -47,14 +47,12 @@ pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
 # Open hectare data files ----
 
 gws <- read_csv("analysis/GWS/GWS_Baden_2021_2012.csv") %>%
-  filter(!is.na(E_KOORD.x), !is.na(N_KOORD.x))%>%
-  mutate(E_KOORD = E_KOORD.x, N_KOORD = N_KOORD.x)%>%
+  filter(!is.na(E_KOORD), !is.na(N_KOORD))%>%
   relocate(N_KOORD)%>%
   relocate(E_KOORD)
 
 statent <- read_csv("analysis/STATENT/STATENT_Baden_2020_2012.csv")%>%
-  filter(!is.na(E_KOORD.x), !is.na(N_KOORD.x))%>%
-  mutate(E_KOORD = E_KOORD.x, N_KOORD = N_KOORD.x)%>%
+  filter(!is.na(E_KOORD), !is.na(N_KOORD))%>%
   relocate(N_KOORD)%>%
   relocate(E_KOORD)
 
@@ -93,17 +91,15 @@ sf_conversion <- function(df_file,x,y){
 }
 
 pop_ha_c <- sf_conversion(pop_data,"E_KOORD","N_KOORD")
-pop <- dplyr::select(pop_ha_communes,geometry,GMDNAME)
+pop <- dplyr::select(pop_ha_c,geometry,GMDNAME)
 
 gws_ha <- sf_conversion(gws,"E_KOORD","N_KOORD")
+gws_ha_colnames <- colnames(gws_ha)
 statent_ha <- sf_conversion(statent,"E_KOORD","N_KOORD")
 
 #st_write(pop_ha_communes,"analysis/PopDataperHectare.shp")
 
-gws_ha_c <- st_join(gws_ha,pop)%>%
-  relocate(geometry)%>%
-  relocate(GMDNAME.y)%>%
-  relocate(GMDNAME.x)
+gws_ha_c <- st_join(gws_ha,pop)
 
 statent_ha_c <- st_join(statent_ha,pop)%>%
   relocate(geometry)%>%
@@ -118,8 +114,8 @@ pop_ha_communes_df <- st_drop_geometry(pop_ha_communes)
 gws_ha_c_df <- st_drop_geometry(gws_ha_c)
 statent_ha_c_df <- st_drop_geometry(statent_ha_c)
 
-write.csv(gws_ha_c_df,"/analysis/GWS_21_12_wCommunes")
-write.csv(statent_ha_c_df,"/analysis/STATENT_21_12_wCommunes")
+write.csv(gws_ha_c_df,"/analysis/GWS_21_12_wCommunes.csv")
+write.csv(statent_ha_c_df,"/analysis/STATENT_21_12_wCommunes.csv")
 
 
 # ggplot ----
