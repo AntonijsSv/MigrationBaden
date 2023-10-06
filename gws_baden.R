@@ -52,8 +52,8 @@ for (i in 1:length(years)) {
     }
     else {
       gws_yr %>%
-      dplyr::select(-c(X_KOORD,Y_KOORD,N_KOORD,E_KOORD)) %>%#Removes Coordinates, as they stay constant throughout the years
-      add_yr("RELI",years[i])
+      dplyr::select(-c(X_KOORD,Y_KOORD,N_KOORD,E_KOORD)) #Removes Coordinates, as they stay constant throughout the years
+      gws_yr <- add_yr(gws_yr,"RELI",years[i])
       gws_baden <- full_join(gws_baden, gws_yr, by="RELI") 
       #Appends the new dataset to baden df, by joining by RELI, data belonging to each ha is put on the same row
     }
@@ -82,5 +82,5 @@ for (i in 1:length(years)) {
   
 }
 
-write.csv(gws_baden,"GWS_Baden_2021_2012.csv")
+write.csv(gws_baden,"GWS_Baden_2021_2013.csv")
 

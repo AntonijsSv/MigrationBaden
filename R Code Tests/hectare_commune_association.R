@@ -46,9 +46,9 @@ pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
 
 # Open hectare data files ----
 
-gws <- read_csv("analysis/GWS/GWS_Baden_2021_2012.csv") %>%
-  filter(!is.na(E_KOORD), !is.na(N_KOORD))%>%
-  mutate(x = E_KOORD, y=N_KOORD)%>%
+gws <- read_csv("analysis/GWS/GWS_Baden_2021_2013.csv") %>%
+  filter(!is.na(E_KOORD_2021), !is.na(N_KOORD_2021))%>%
+  mutate(x = E_KOORD_2021, y=N_KOORD_2021)%>%
   relocate(y)%>%
   relocate(x)
 
@@ -96,7 +96,7 @@ pop_ha_c <- sf_conversion(pop_data,"E_KOORD","N_KOORD")
 pop <- dplyr::select(pop_ha_c,geometry,GMDNAME)
 
 gws_ha <- sf_conversion(gws,"x","y") %>%
-  relocate(GMDNAME,)
+  relocate(GMDNAME)
 statent_ha <- sf_conversion(statent,"x","y")
 
 #st_write(pop_ha_communes,"analysis/PopDataperHectare.shp")
