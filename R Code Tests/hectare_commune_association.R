@@ -40,7 +40,7 @@ y_range[2] <- y_range[2] + excess
 
 #Population data per hectare
 pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
-  filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2])) 
+  filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2]))
 
 #filters data to only show that around Baden
 
@@ -48,11 +48,13 @@ pop_data <- read_csv("analysis/PopDataperHectare.csv")%>%
 
 gws <- read_csv("analysis/GWS/GWS_Baden_2021_2012.csv") %>%
   filter(!is.na(E_KOORD), !is.na(N_KOORD))%>%
-  relocate(N_KOORD)%>%
-  relocate(E_KOORD)
+  mutate(x = E_KOORD, y=N_KOORD)%>%
+  relocate(y)%>%
+  relocate(x)
 
 statent <- read_csv("analysis/STATENT/STATENT_Baden_2020_2012.csv")%>%
   filter(!is.na(E_KOORD), !is.na(N_KOORD))%>%
+  mutate(x = E_KOORD, y=N_KOORD)%>%
   relocate(N_KOORD)%>%
   relocate(E_KOORD)
 
@@ -93,29 +95,19 @@ sf_conversion <- function(df_file,x,y){
 pop_ha_c <- sf_conversion(pop_data,"E_KOORD","N_KOORD")
 pop <- dplyr::select(pop_ha_c,geometry,GMDNAME)
 
-gws_ha <- sf_conversion(gws,"E_KOORD","N_KOORD")
-gws_ha_colnames <- colnames(gws_ha)
-statent_ha <- sf_conversion(statent,"E_KOORD","N_KOORD")
+gws_ha <- sf_conversion(gws,"x","y") %>%
+  relocate(GMDNAME,)
+statent_ha <- sf_conversion(statent,"x","y")
 
 #st_write(pop_ha_communes,"analysis/PopDataperHectare.shp")
 
-gws_ha_c <- st_join(gws_ha,pop)
 
-statent_ha_c <- st_join(statent_ha,pop)%>%
-  relocate(geometry)%>%
-  relocate(GMDNAME.y)%>%
-  relocate(GMDNAME.x) #%>%
-  #filter(GMDNAME.x != GMDNAME.y)
-#!!!!!
-#ISSUE: some hectares are allocated to different communes????
-#!!!!!
+pop_ha_communes_df <- st_drop_geometry(pop_ha_c)
+gws_ha_c_df <- st_drop_geometry(gws_ha)
+statent_ha_c_df <- st_drop_geometry(statent_ha)
 
-pop_ha_communes_df <- st_drop_geometry(pop_ha_communes)
-gws_ha_c_df <- st_drop_geometry(gws_ha_c)
-statent_ha_c_df <- st_drop_geometry(statent_ha_c)
-
-write.csv(gws_ha_c_df,"/analysis/GWS_21_12_wCommunes.csv")
-write.csv(statent_ha_c_df,"/analysis/STATENT_21_12_wCommunes.csv")
+write.csv(gws_ha_c_df,"analysis/GWS_21_12_wCommunes.csv")
+write.csv(statent_ha_c_df,"analysis/STATENT_21_12_wCommunes.csv")
 
 
 # ggplot ----
