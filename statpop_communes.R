@@ -65,3 +65,5 @@ write.csv(statpop_baden,"analysis/STATPOP_Communes.csv")
 
 population_baden <- mutate(statpop_baden, Gemeinde = Gemeinde.x) %>%
   dplyr::select(c(GMDE, Gemeinde) | contains("BTOT") )
+
+write.csv(population_baden,"analysis/population_baden.csv")
