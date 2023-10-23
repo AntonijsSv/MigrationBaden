@@ -58,6 +58,27 @@ statent <- read_csv("analysis/STATENT/STATENT_Baden_2020_2012.csv")%>%
   relocate(N_KOORD)%>%
   relocate(E_KOORD)
 
+statpop <- read_csv("analysis/statpop/STATPOP_Baden_2021_2011.csv")%>%
+  dplyr::select(contains(c("RELI","KOORD","BTOT")),-c(X_KOORD,Y_KOORD,N_KOORD.y,E_KOORD.y))
+
+for (row in 1:nrow(statpop)) {
+  if (is.na(statpop$E_KOORD.x[row])) {
+    statpop$E_KOORD.x[row] <- statpop$RELI[row]%/%10000+20000
+    statpop$N_KOORD.x[row] <- statpop$RELI[row]%%10000+10000
+    row_mean <- round(mean(as.numeric(statpop[row,4:ncol(statpop)]),na.rm=TRUE),0) 
+    row_na <- statpop_na[row,4:ncol(statpop)]
+    row_na[is.na(row_na)] <- row_mean
+    statpop[row,4:ncol(statpop)] <- row_mean
+  }
+  if (any(is.na(statpop[row,]))) {
+    row_mean <- round(mean(as.numeric(statpop[row,4:ncol(statpop)]),na.rm=TRUE),0) 
+    row_na <- statpop_na[row,4:ncol(statpop)]
+    row_na[is.na(row_na)] <- row_mean
+    statpop[row,4:ncol(statpop)] <- row_mean
+  }
+}
+statpop <- mutate(statpop,E_KOORD = E_KOORD.x, N_KOORD = N_KOORD.x) %>%
+  relocate(E_KOORD,N_KOORD)
 # shp filtering ----
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp") #Shape data for the municipality boundaries
 gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% #List and Population of each municipality in Baden
@@ -95,6 +116,11 @@ sf_conversion <- function(df_file,x,y){
 pop_ha_c <- sf_conversion(pop_data,"E_KOORD","N_KOORD")
 pop <- dplyr::select(pop_ha_c,geometry,GMDNAME)
 
+statpop_ha_c <- sf_conversion(statpop,"E_KOORD.x","N_KOORD.x")
+statpop_ha_c <- statpop_ha_c[,-c(16:36,38)] %>%
+  relocate(Gemeinde)
+
+
 gws_ha <- sf_conversion(gws,"x","y") %>%
   relocate(GMDNAME)
 statent_ha <- sf_conversion(statent,"x","y")
@@ -106,9 +132,10 @@ pop_ha_communes_df <- st_drop_geometry(pop_ha_c)
 gws_ha_c_df <- st_drop_geometry(gws_ha)
 statent_ha_c_df <- st_drop_geometry(statent_ha)
 
+
 write.csv(gws_ha_c_df,"analysis/GWS_21_12_wCommunes.csv")
 write.csv(statent_ha_c_df,"analysis/STATENT_21_12_wCommunes.csv")
-
+write.csv(st_drop_geometry(statpop_ha_c),"analysis/STATPOP_21_11_wCommunes.csv")
 
 # ggplot ----
 map500 <- raster("Maps/Baden500_excess.tif")%>% 

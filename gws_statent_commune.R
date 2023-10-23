@@ -19,12 +19,12 @@ statent_file <- read_csv("analysis/STATENT_20_11_wCommunes.csv")%>%
   dplyr::select(c(GMDNAME,RELI) | contains("_20"))
 statent_file[is.na(statent_file)] <- 0
 
+statpop_file <- read_csv("analysis/STATPOP_21_11_wCommunes.csv")
+
+
 communes_baden <- read_excel("analysis/2021_Gemeinden.xlsx")$Gemeinde  #We just want the names, nothing else
 communes_baden <- gsub("\\(AG)|", "",communes_baden)
 
-
-years_gws <- c(2021:2013)
-years_ent <- c(2020:2011)
 
 # Function hell ----
 add_columns <- function(df,column_list,suffix) {
@@ -39,7 +39,7 @@ add_columns <- function(df,column_list,suffix) {
   return(df)
 }
 
-create_df <- function(df, communes) {
+create_df <- function(df, communes,suffix) {
   #'creates a data frame with all the columns (empty) to fill in later
   #'df is the dataframe you want to use
   #'communes is a list of all communes
@@ -47,7 +47,6 @@ create_df <- function(df, communes) {
   df_communes <- data.frame("Communes" = communes)
   columns <- c()
   for (col in 1:ncol(df)) {
-    suffix <- "_20"
     if (str_detect(as.character(colnames(df)[col]),suffix)) {
       columns <- c(columns,colnames(df)[col])
     }
@@ -59,6 +58,7 @@ create_df <- function(df, communes) {
 
 #gws_0 <- create_df(gws_file,communes_baden,years_gws)
 #statent_0 <- create_df(statent_file,communes_baden,years_ent)
+statpop_0 <- create_df(statpop_file,communes_baden,"BTOT")
 
 add_to_commune <- function(commune, 
                            row, 
@@ -91,10 +91,14 @@ find_ha_in_commune <- function(commune,
   for (ha in 1:length(ha_in_commune)) {
     if (ha_in_commune[ha]) {
       print(paste("row",ha))
+      
       #output <- add_to_commune(commune, ha, 
       #                         data, output, 
       #                         start_col_data, start_col_output)
-      output[commune,start_col_output:ncol(output)] <- output[commune,start_col_output:ncol(output)] + data[ha,start_col_data:ncol(data)]
+      value <- data[ha,start_col_data:ncol(data)]
+      value[is.na(value)] <- 0
+      output[commune,start_col_output:ncol(output)] <- 
+        output[commune,start_col_output:ncol(output)] + value
     }
   }
   return(output)
@@ -103,7 +107,8 @@ find_ha_in_commune <- function(commune,
 communizator <- function(data, 
                          communes_list,
                          start_col_data,
-                         start_col_output) {
+                         start_col_output,
+                         suffix) {
   #'takes ha data and turns it into a data frame per commune
   #'data is the data frame with all data
   #'communes is a list of all the communes
@@ -111,7 +116,8 @@ communizator <- function(data,
   #'ha_commune_col,is a number, its the nth column where the communes are given
   #'col_start is when the data (numbers) in the data frame actually begins (after coordinates and names, etc.)
   df <- create_df(data,
-                  communes_list)
+                  communes_list,
+                  suffix)
   for (commune in 1:length(communes_list)) {
     ha_in_commune <- grepl(communes_list[commune],
                            gws_file$GMDNAME)
@@ -152,13 +158,13 @@ communizator <- function(data,
 #                    3,
 #                    2)
 
-statent <- communizator(statent_file,
-                        communes_baden,
-                        3,
-                        2)
+#statent <- communizator(statent_file,
+#                        communes_baden,
+#                        3,
+#                        2,
+#                        "_20")
 
 # Make Files -----
 
 #write.csv(gws,"analysis/GWS_Communes.csv")
 
-write.csv(statent,"analysis/STATENT_Communes.csv")
