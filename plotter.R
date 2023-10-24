@@ -217,9 +217,4 @@ analysis_colour(statent_tot,
                 "Population in relation to amount of Businesses",
                 "Time",
                 "Population",
-                "Amount of Businesses")
-
-
-
-
-
+                "Amount of Businesses")s
