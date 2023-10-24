@@ -11,9 +11,6 @@ communes_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>%
 
 yrs <- c(2022:2011)
 
-
-
-
 for (i in 1:length(yrs)) {
   #aka for the amount of files
   print(yrs[i])#print which year is being worked on
