@@ -39,17 +39,23 @@ for (i in 1:length(years)) {
       filter(!is.na(Gemeinde))
     
     
-    e_range <- range(baden_data$E_KOORD)
+    y_range <- range(baden_data$E_KOORD)
     
-    n_range <- range(baden_data$N_KOORD)
+    x_range <- range(baden_data$N_KOORD)
     
     
     ov_yr <- paste0("OeV/OeV_Haltestellen_ARE_",years[i], ".csv")
     
     ov_yr <- read_delim(ov_yr, delim = ";", 
                         escape_double = FALSE, trim_ws = TRUE) #%>%
-      ov_yr <- filter(ov_yr,X_Koord %in% (e_range[1]:e_range[2]), Y_Koord %in% (n_range[1]:n_range[2]))
-    
+      ov_yr <- filter(ov_yr,between(X_Koord,x_range[1],x_range[2]),between(Y_Koord,y_range[1],y_range[2]))
+      
+    ov_names <- colnames(ov_yr)
+    for (j in 1:length(ov_names)) {
+      if (ov_names[j] != "Name") {
+        colnames(ov_yr)[j] <- paste0(ov_names[j],"_",years[i])
+      }
+    }
     
     if (years[i] == 2023) {
       
@@ -68,4 +74,4 @@ for (i in 1:length(years)) {
     }}
     
 
-write.csv(ov_baden,"OV_Baden_2023_2012.csv")
+write.csv(ov_baden,"OV_Baden_2023_2012_1.csv")
