@@ -45,6 +45,7 @@ ggplot(storagepop, aes(x=years, y=storagepop[,3])) +
   geom_point() + 
   geom_point(data=storagerent, aes(x=years,y=storagerent[,3]))
 
-myTibble<- as_tibble(storagerent$V2)
-myTibble<- t(myTibble) 
-cor(myTibble,population_baden[2, 3:12])
+rent_tibble<- storagerent$V2
+rent_vector<- as.numeric(t(rent_tibble))#as.numeric() turns it into a numeric vector
+pop_vector <- as.numeric(population_baden[2, 3:12]) #as.numeric() turns it into a numeric vector
+cor(rent_vector,pop_vector) #cor only works with numeric vectors
