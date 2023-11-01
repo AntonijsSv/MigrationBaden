@@ -7,8 +7,9 @@ library(raster)
 library(viridis) # viridis color scale
 library(readxl)
 library(patchwork)
+library(ggnewscale)
 
-# Files ----
+# General Files ----
 #Shape data for the municipality boundaries
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp")
 
@@ -27,6 +28,8 @@ commune_geo$Gemeinde <- gsub("\\(AG)|", "",commune_geo$Gemeinde)%>%
   str_trim()
 #remove (AG) suffix to some communes 
 commune <- commune_general_info$GMDNAME
+
+# Population files----
 #purely the population of each commune from 2022 to 2011
 population <- read_xlsx("analysis/population_baden.xlsx")%>%
   dplyr::select(-GMDE)
@@ -34,11 +37,13 @@ population <- read_xlsx("analysis/population_baden.xlsx")%>%
 pop <- t(population)
 colnames(pop) <- pop[1,]
 pop <- as.tibble(pop[-1,])
+colnames(pop)[2:ncol(pop)] <- paste0("pop_",colnames(pop)[2:ncol(pop)])
+pop$Years <- str_trim(pop$Years)
 
+# Factor Files ----
 gws <- read_csv("analysis/GWS_Communes.csv") %>%
   dplyr::select(-"...1")
 gws_geo <- left_join(commune_geo,gws,by=join_by(Gemeinde==Communes))
-
 statent <- read_xlsx("analysis/STATENT_Communes.xlsx")
 statent_geo <- left_join(commune_geo,statent,by=join_by(Gemeinde))
 
@@ -100,7 +105,7 @@ baden_commune_map <- function(visual_data,fill_data,legend)
     geom_sf( #Create the municiplality Boundaries
       data = visual_data,
       aes(fill=fill_data),
-      color = "transparent",
+      color = "black",
       size = 0.5) +
     
     scale_fill_viridis(#Set a custom fill for the data to be visualised
@@ -181,7 +186,7 @@ analysis_colour <- function(colour_df,
     xlab(x_lab) +
     ylab(y_lab)
 }
-# Plots ----
+# Data Analysis ----
 dataset <- function(data,value) {
   rownames(data) <- data[,1]
   data <-  dplyr::select(data,contains(value)) #only select values to plot
@@ -196,7 +201,27 @@ dataset <- function(data,value) {
 gws_tot <- (dataset(as.data.frame(gws),"GTOT"))
 statent_tot <- (dataset(as.data.frame(statent),"B08T"))
 
+colnames(gws_tot)[2:ncol(gws_tot)] <- paste0("gws_",colnames(gws_tot)[2:ncol(gws_tot)])
+colnames(statent_tot)[2:ncol(statent_tot)] <- paste0("ent_",colnames(statent_tot)[2:ncol(statent_tot)])
 
+gws_ent <- full_join(gws_tot,statent_tot, by = "Years")
+
+factor_pop <- left_join(gws_ent,pop, by = "Years")
+
+lm_gws <- lm(pop_Baden~Baden, data=gws_pop)
+summary(lm_gws)
+
+statent_pop <-left_join(statent_tot,pop, by = "Years") 
+lm_ent <- lm(pop_Baden~Baden, data=statent_pop)
+summary(lm_ent)
+
+lm_factors<- lm(pop_Baden~ent_Baden, data = factor_pop)
+summary(lm_factors)
+
+plot(statent_pop$Baden,statent_pop$pop_Baden,pch = 16, col = "#009999")
+plot(lm_ent$residuals,pch = 16, col = "#009999")
+plot(cooks.distance(lm_ent),pch = 16, col = "#009999")
+# Plots ----
 analysis_colour(gws_tot,
               "Baden",
               "Population in relation to amount of Buildings",
@@ -217,4 +242,8 @@ analysis_colour(statent_tot,
                 "Population in relation to amount of Businesses",
                 "Time",
                 "Population",
-                "Amount of Businesses")s
+                "Amount of Businesses")
+
+plot(gws_tot$Baden,pop$Baden[2:10])
+
+baden_commune_map(statent_geo,statent_geo$B08T_2021,"statent")
