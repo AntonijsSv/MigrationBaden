@@ -18,6 +18,7 @@ library(shiny)
 library(magick)
 library(patchwork)
 library(ggnewscale)
+library(shinyjs)
 
 # Files ----
 #Shape data for the municipality boundaries
@@ -170,47 +171,80 @@ statent_tot <- (dataset(as.data.frame(statent),"B08T"))
 
 
 
-ui <- fluidPage(
-  titlePanel(h1(strong("Migration Simulator"))),
-  sidebarLayout(position = "right",
-                sidebarPanel(h4(strong("Sliders:")),
-                             sliderInput(inputId = "services",
-                                         label = "Services",
-                                         min = -100,
-                                         max = 100,
-                                         value = 0),
-                             sliderInput(inputId = "work",
-                                         label = "Job Opportunities",
-                                         min = -100,
-                                         max = 100,
-                                         value = 0),
-                             sliderInput(inputId = "house",
-                                         label = "House Prices",
-                                         min = -100,
-                                         max = 100,
-                                         value = 0),
-                             sliderInput(inputId = "rent",
-                                         label = "Rental Prices",
-                                         min = -100,
-                                         max = 100,
-                                         value = 0),
-                             sliderInput(inputId = "ov",
-                                         label = "Public Transport",
-                                         min = -100,
-                                         max = 100,
-                                         value = 0)
-                ),
-                
+ui <- fluidPage(                                                           
+  titlePanel(h1(strong("Migration Simulation"))),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId = "choice",
+                  label = h4(strong("Select a municipality:")),
+                  choices = c("Baden",
+                              "Bellikon",
+                              "Bergdietikon",
+                              "Birmenstorf",
+                              "Ennetbaden",
+                              "Fislisbach",
+                              "Freienwil",
+                              "Gebenstorf",
+                              "Killwangen",
+                              "Kuente",
+                              "Maegenwil",
+                              "Mellingen",
+                              "Neuenhof",
+                              "Niederrohrdorf",
+                              "Oberrohrdorf",
+                              "Obersiggenthal",
+                              "Remetschwil",
+                              "Spreitenbach",
+                              "Stetten", 
+                              "Turgi",
+                              "Untersiggenthal",
+                              "Wettingen",
+                              "Wohlenschwil",
+                              "Wuerenlingen",
+                              "Wuerenlos",
+                              "Ehrendingen"
+                  )
+      ),
+      h4(strong("Migration Factors")),
+      useShinyjs(),
+      sliderInput(inputId = "services",
+                  label = "Services",
+                  min = -100,
+                  max = 100,
+                  value = 0),
+      sliderInput(inputId = "work",
+                  label = "Job Opportunities",
+                  min = -100,
+                  max = 100,
+                  value = 0),
+      sliderInput(inputId = "house",
+                  label = "House Prices",
+                  min = -100,
+                  max = 100,
+                  value = 0),
+      sliderInput(inputId = "rent",
+                  label = "Rental Prices",
+                  min = -100,
+                  max = 100,
+                  value = 0),
+      sliderInput(inputId = "ov",
+                  label = "Public Transport",
+                  min = -100,
+                  max = 100,
+                  value = 0)
+    ),                
                 #Main Part of Website (displaying map & Slider values)
-                mainPanel(("The following map shows the population of the municipalities in the region Baden. 
-                          By moving the sliders on the right the migration factors can be adjusted and the map will display the change in population of the different municipalities."),
+                mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop down menu and moving the sliders on the left the migration factors can be adjusted for a certain municipality and the map will display the change in population of all municipalities."),
                           plotOutput("map"),
-                          tableOutput("values")
+                          tableOutput("values"),
                 )
   )
 )
 # Define server logic ----
 server <- function(input, output) {
+  output$selected_option <- renderText({
+    paste("You selected:", input$choice)
+  })
   sliderValues <- reactive({
 
     
@@ -225,12 +259,17 @@ server <- function(input, output) {
   output$map <- renderPlot({
     visual_option <- (sliderValues()[1,2])
     numeric_visual_option <- as.numeric(visual_option)
+    
+    options(
+      shiny.reactlog = TRUE,
+      shiny.reactlog_interval = 1000
+    )
     #Visualize all the maps
     baden_commune_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Population")
 
 
     
-  }) 
+  }, width = 900, height = 600) 
 }
 # Run the app ----
 shinyApp(ui = ui, server = server)
