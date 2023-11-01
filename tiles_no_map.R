@@ -2,10 +2,10 @@ library(ggplot2)
 library(dplyr)
 library(readxl)
 
-pop_data_gmd <- read.csv("C:/Users/colte/Documents/.School/__MaturaProject/DataSimulation/STATPOP2021_NOLOC.csv", sep=";")%>%
+pop_data_gmd <- read.csv("analysis/statpop/NOLOCSTATPOP2021_NOLOC.csv", sep=";")%>%
   select(E_KOORD,N_KOORD,GMDE)
 
-gemeinden <- read_excel("C:/Users/colte/Documents/.School/__MaturaProject/DataSimulation/2021_Gemeinden.xlsx") %>%
+gemeinden <- read_excel("analysis/2021_Gemeinden.xlsx") %>%
   mutate(GMDE=`Gmd-Nr.`)
 
 gmd_data <- left_join(pop_data_gmd,gemeinden, by="GMDE") %>%
@@ -13,6 +13,7 @@ gmd_data <- left_join(pop_data_gmd,gemeinden, by="GMDE") %>%
 x_range <- range(gmd_data$E_KOORD)
 y_range <- range(gmd_data$N_KOORD)
 
+#No longer available, need to change to PopDataoerHectare
 pop_data <- read.csv("C:/Users/colte/Documents/.School/__MaturaProject/DataSimulation/STATPOP2021.csv", sep=";")%>%
   select(E_KOORD,N_KOORD, B21BTOT) %>%
   filter(E_KOORD %in% (x_range[1]:x_range[2]), N_KOORD %in% (y_range[1]:y_range[2]))
