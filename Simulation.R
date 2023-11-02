@@ -7,6 +7,13 @@ library(viridis) # viridis color scale
 library(readxl)
 library(patchwork)
 
+#Files ----
+gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% 
+  mutate(GMDNR=`Gmd-Nr.`)
+
+population <- read_xlsx("analysis/population_baden.xlsx")
+
+communes <- gemeinden_baden$Gemeinde
 
 # ggplot map ----
 map500 <- raster("Maps/Baden500_excess.tif")%>% 
@@ -102,21 +109,38 @@ baden_commune_map <- function(visual_data,fill_data,legend)
 }
 
 
+coefficients <- matrix(0, nrow = length(communes), ncol= 5)
+rownames (coefficients) <- communes
+colnames(coefficients) <- c("Houseprices",
+                            "Rentprices",
+                            "Public Transport",
+                            "Job Opportunities",
+                            "Services")
 
-gemeinden_baden <- read_excel("analysis/2021_Gemeinden.xlsx") %>% 
-  mutate(GMDNR=`Gmd-Nr.`)
-
-population <- read_xlsx("analysis/population_baden.xlsx")
-
-communes <- gemeinden_baden$Gemeinde
-
-pop_m <-diag(26)
 pop_v <- as.matrix(population$"2022"[-1])
 
+move_out <- matrix(0, nrow = length(communes), ncol = 5)
+rownames(move_out) <- communes
+colnames(move_out) <- c("0-1km", "1-5km", "5-10km","10-50km","50+km")
 
-rownames(pop_m) <- communes
-colnames(pop_m) <- communes
+#Create Emigration Probability Matrix ----
+commune_type <- matrix(0,nrow=length(communes),ncol=2)
+commune_type[,1]<- communes
+commune_type[,2] <- c(1,4,2,5,5,2,3,5,2,3,4,5,5,2,5,4,2,5,3,5,2,2,2,5,5,3)
+move_out_percent <- data.frame("urban"= c(.305,.344,.114,.175,0.062),
+                               "small_urban" = c(.344,.29,.102,.198,.067),
+                               "peri-urban" = c(.258,.244,.189,.25,.059),
+                               "rural-centre" = c(.37,.213,.099,.235,.082),
+                               "rural" = c(.268,.239,.167,.27,.054))
+#Data collected from 
+#https://www.swissstats.bfs.admin.ch/collection/ch.admin.bfs.swissstat.en.issue201420182000/article/issue201420182000-10
+for (commune in 1:length(communes)) {
+  type <- as.numeric(commune_type[commune,2])
+  for (i in 1:5) {
+    move_out[commune,i] <- move_out_percent[i,type]
+  }
+}
 
-pop_m <- pop_m*2
+# Emigration Simulation ----
+#Input is the emigrating population
 
-pop_m %*% pop_v
