@@ -404,7 +404,6 @@ for (col in 1:ncol(ov_pop)){
 
 
 
-# Multi-Variable Lm regression
 # Corrplots ----
 single_factor_pop_dfs <-paste0("pop_",factors)
 
@@ -429,7 +428,7 @@ correlation_matrix <- function(factor_list, df, time_delay) {
   for (factor in 1:length(factors)) {
     cor_factor_name <- factor_list[factor]
     x <- dplyr::select(df, starts_with(paste0(factors[factor],"_")))
-    y <- dplyr::select(df,starts_with("pop"))
+    y <- dplyr::select(df,starts_with("pop_"))
     y <- y[complete.cases(x),]
     x <- x[complete.cases(x),]
     x <- x[complete.cases(y),]
@@ -528,10 +527,36 @@ factor_plot("house",factor_pop)
 acf(factor_pop$rent_Baden,na.action = na.pass)
 
 # Cor Plots ----
+corr_matrix_factor <- function(factor,df){
+  x <- dplyr::select(df, starts_with(paste0(factor,"_")))
+  y <- dplyr::select(df,starts_with("pop"))
+  y <- y[complete.cases(x),]
+  x <- x[complete.cases(x),]
+  x <- x[complete.cases(y),]
+  y <- y[complete.cases(y),]
+  cor_factor <- cor(x,y)
+  windows()
+  par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+  corrplot(cor_factor,tl.cex = 0.8,number.cex = 0.8,title=factor,mar=c(0,0,1,0),addCoef.col = "gray50")
+}
+
+corr_matrix_commune <- function(commune,df){
+  x <- dplyr::select(df, contains(paste0("_",commune)))
+  y <- dplyr::select(x,starts_with("pop_"))
+  y <- y[complete.cases(x),]
+  x <- x[complete.cases(x),]
+  x <- x[complete.cases(y),]
+  y <- y[complete.cases(y),]
+  cor_factor <- cor(x,y)
+  windows()
+  par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+  corrplot(cor_factor,tl.cex = 0.8,number.cex = 0.8,title=factor,mar=c(0,0,1,0),addCoef.col = "gray50")
+}
 windows()
 par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
 corrplot(cor_house,tl.cex = 0.8,number.cex = 0.8,title="House",mar=c(0,0,1,0),addCoef.col = "black")
-
+corr_matrix_factor("house",factor_pop)
+corr_matrix_commune("Baden",factor_pop)
 # Pair Plots ----
 pair_plot <- function(commune){
   windows()
@@ -713,6 +738,10 @@ commune # list of all communes
 factors # List of all factors
 commune_plot("Baden")
 factor_plot("house",factor_pop)
-correlation_matrix(cor_housem,df=factor_pop)
+corr_matrix_commune("Baden",factor_pop)
+corr_matrix_factor("house",factor_pop)
 fpop_factor_plot("house")
 pair_plot("Baden")
+
+# Multi-Variable Lm regression ----
+lm
