@@ -245,14 +245,14 @@ services <- c("B0835AS",
 services_tot <- multiple_values(statent,services)
 colnames(services_tot)[2:ncol(services_tot)] <- paste0("services_",commune)
 
-factor_pop <- full_join(factor_pop,services_tot, by = "Years")
+#factor_pop <- full_join(factor_pop,services_tot, by = "Years")
 
 #Public Transport ---
 pt <- c("train","bus")
 public_transport <- multiple_values(ov,pt)
 colnames(public_transport)[2:ncol(public_transport)] <- paste0("ov_",commune)
 
-factor_pop <- full_join(factor_pop,public_transport, by = "Years")
+#factor_pop <- full_join(factor_pop,public_transport, by = "Years")
 
 #House & Rent Prices ---
 house <- dataset(as.data.frame(house_prices),"2")
@@ -277,7 +277,7 @@ factor_pop <- full_join(factor_pop,edu, by = "Years")
 #Handel
 shop <- multiple_values(statent,c("B0846AS","B0847AS"))
 colnames(shop)[2:ncol(shop)] <- paste0("shop_",colnames(shop)[2:ncol(shop)])
-factor_pop <- full_join(factor_pop,shop, by = "Years")
+#factor_pop <- full_join(factor_pop,shop, by = "Years")
 #Health
 health <- dataset(as.data.frame(statent),"B0886AS")
 colnames(health)[2:ncol(health)] <- paste0("health_",colnames(health)[2:ncol(health)])
@@ -287,27 +287,111 @@ entertainment <- multiple_values(statent,c("B0890AS","B0893AS"))
 colnames(entertainment)[2:ncol(entertainment)] <- paste0("entertainment_",colnames(entertainment)[2:ncol(entertainment)])
 factor_pop <- full_join(factor_pop,entertainment, by = "Years")
 
+for (col in 1:ncol(factor_pop)) {
+  factor_pop[[col]] <- as.numeric(factor_pop[[col]])
+}
+
+gastro <- dataset(as.data.frame(statent),"B0858AS")
+colnames(gastro)[2:ncol(health)] <- paste0("gastro_",colnames(gastro)[2:ncol(gastro)])
+for (col in 1:ncol(gastro)) {
+  gastro[[col]] <- as.numeric(gastro[[col]])
+}
+#factor_pop <- full_join(factor_pop,gastro, by = "Years")
 
 last_yr <- factor_pop[13,]
 factor_pop <- factor_pop[-13,]
 factor_pop <- rbind(last_yr,factor_pop)
 
-for (col in 1:ncol(factor_pop)) {
-  factor_pop[[col]] <- as.numeric(factor_pop[[col]])
+# d_factor_pop ----
+d_factor_pop <- factor_pop
+for (col in 1:ncol(d_factor_pop)) {
+  d_factor_pop[[col]] <- as.numeric(d_factor_pop[[col]])
 }
 
-#Data Analysis ----
+for (row in 1:nrow(d_factor_pop)) {
+  rownames(d_factor_pop) [row] <- paste0(d_factor_pop[row+1,1],"_",d_factor_pop[row,1])
+  d_factor_pop[row,c(2:ncol(d_factor_pop))] <- d_factor_pop[row,c(2:ncol(d_factor_pop))] - d_factor_pop[row+1,c(2:ncol(d_factor_pop))]
+}
+d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]
+
+weak_cor <- dplyr::select(factor_pop,Remetschwil,Bellikon, Oberrohrdorf)
+  
+# fpop ----
+df0 <-
+  factor_pop |>
+  dplyr::select(-contains("pop_")) |>
+  pivot_longer(-Years) |>
+  mutate(underscore = str_locate(name, "_")[, 1]) |>
+  transmute(
+    Years,
+    factor = str_sub(name, 1, underscore - 1),
+    commune = str_sub(name, underscore + 1, -1),
+    value
+  )
+
+df1 <-
+  factor_pop |>
+  dplyr::select(Years, contains("pop_")) |>
+  pivot_longer(-Years) |>
+  mutate(underscore = str_locate(name, "_")[, 1]) |>
+  transmute(Years, commune = str_sub(name, underscore + 1, -1), pop = value)
+
+df0$commune <- gsub("\\(AG)|", "",df0$commune)%>%
+  str_trim()
+df0$commune <- gsub("\\..AG.|", "",df0$commune)%>%
+  str_trim()
+df1$commune <- gsub("\\(AG)|", "",df1$commune)%>%
+  str_trim()
+df1$commune <- gsub("\\..AG.|", "",df1$commune)%>%
+  str_trim()
+
+
+fpop <- full_join(df0, df1, c("Years", "commune"))
+
+
+
+# fpop plotting ----
+fpop_factor_plot <- function(f) {
+  #' f is the character name of the factor
+  windows()
+  fpop |>
+    filter(factor == f) |>
+    ggplot() +
+    geom_path(aes(value, pop)) +
+    geom_text(aes(value, pop, label = Years), size = 1.5) +
+    facet_wrap(~commune, 5, 6, "free") +
+    theme_gray(base_size = 8)
+}
+fpop_commune_plot <- function(c) {
+  #' f is the character name of the factor
+  windows()
+  fpop |>
+    filter(commune == c) |>
+    ggplot() +
+    geom_path(aes(value, pop)) +
+    geom_text(aes(value, pop, label = Years), size = 1.5) +
+    facet_wrap(~commune, 5, 6, "free") +
+    theme_gray(base_size = 8)
+}
+
+fpop_factor_plot("rent")
+
+# Data Analysis - Regression ----
 
 lm_ent <- lm(pop_Baden~ent_Baden, data=factor_pop)
 summary(lm_ent)
 lm_ov <- lm(pop_Baden~ov_Baden, data = factor_pop)
 plot(lm_ov)
 
-lm_factors<- lm(pop_Baden~gws_Baden + ent_Baden, data = factor_pop)
+lm_factors<- lm(pop_Baden[-c(1,13,12)]~rent_Baden[-c(1,2,3)], data = factor_pop)
 summary(lm_factors)
 
 lm_Ehrendingen <- lm(pop_Ehrendingen~ov_Ehrendingen, data = factor_pop)
 summary(lm_Ehrendingen)
+
+lm_Birmi_house <- lm(pop_Birmenstorf~house_Birmenstorf..AG., data= factor_pop)
+summary(lm_Birmi_house)
+
 ggplot(factor_pop,aes(ov_Ehrendingen,pop_Ehrendingen))+
   geom_point(colour = "#005588")
 
@@ -317,11 +401,15 @@ for (col in 1:ncol(ov_pop)){
   ov_pop[[col]] <- as.numeric(ov_pop[[col]])
 }
 
-factors <- c("gws","ent","services","ov","house","rent","edu","shop","health","entertainment")
 
-correlations <- paste0("cor_",factors)
+
+
+# Multi-Variable Lm regression
+# Corrplots ----
 single_factor_pop_dfs <-paste0("pop_",factors)
 
+#No time Delay
+correlations <- paste0("cor_",factors)
 for (factor in 1:length(factors)) {
   cor_factor_name <- correlations[factor]
   x <- dplyr::select(factor_pop, starts_with(factors[factor]))
@@ -335,45 +423,169 @@ for (factor in 1:length(factors)) {
   assign(correlations[factor],cor_factor)
 }
 
-Siggenthal <- dplyr::select(factor_pop,contains("siggenthal"))
-# factor Plots ----
+#Time Delay 1 Year
+
+correlation_matrix <- function(factor_list, df, time_delay) {
+  for (factor in 1:length(factors)) {
+    cor_factor_name <- factor_list[factor]
+    x <- dplyr::select(df, starts_with(paste0(factors[factor],"_")))
+    y <- dplyr::select(df,starts_with("pop"))
+    y <- y[complete.cases(x),]
+    x <- x[complete.cases(x),]
+    x <- x[complete.cases(y),]
+    y <- y[complete.cases(y),]
+    #print(c(nrow(x),nrow(y)))
+    if (!missing(time_delay)) {
+      x <- x[-c(1:time_delay),]
+      y <- y[-c(nrow(y):(nrow(y)-time_delay+1)),]
+      #print(c(nrow(x),nrow(y),nrow(y)-time_delay))
+    }
+    #view(x)
+    #view(y)
+    cor_factor <- cor(x,y)
+    assign(factor_list[factor],cor_factor,envir = .GlobalEnv)
+  }
+}
+cor0 <- paste0("cor_",factors) 
+cor_1 <- paste0("cor1_",factors)
+cor_2 <- paste0("cor2_",factors)
+cor_3 <- paste0("cor3_",factors)
+cor_4 <- paste0("cor4_",factors)
+dcor <- paste0("dcor_",factors)
+dcor_1 <- paste0("dcor1_",factors)
+dcor_2 <- paste0("dcor2_",factors)
+dcor_3 <- paste0("dcor3_",factors)
+dcor_4 <- paste0("dcor4_",factors)
+correlation_matrix(cor0,factor_pop)
 
 
-factor_plot <- function(factor){
+# Commune Plots ----
+commune_plot <- function(commune,lag){
+  windows()
+  par(mfrow=c(2,5),mar=c(3,3,3,1))
+  c <- gsub("\\(AG)|", "",commune) %>%
+    str_trim()
+  commune_pop <- paste0("pop_",c)
+  for (i in 1:length(factors)) {
+    #factor on the x-axis
+    commune_factor <- colnames(dplyr::select(factor_pop, contains(c) & starts_with(paste0(factors[i],"_"))))[1]
+    
+    y <- factor_pop[[commune_pop]][-is.na(factor_pop[[commune_factor]])]
+    x <- factor_pop[[commune_factor]][-is.na(factor_pop[[commune_factor]])]
+    x <- factor_pop[[commune_factor]][-is.na(factor_pop[[commune_pop]])]
+    y <- factor_pop[[commune_pop]][-is.na(factor_pop[[commune_pop]])]
+    
+    if(missing(lag)) {
+      plot(x,y,main=c,xlab=factors[i],ylab="",line=1,pch = 16, col = "#005588")
+    }
+    else {
+      plot(x[-c(1:lag)],y[-c(length(y):length(y)-lag)],main=c,xlab=factors[i],ylab="",line=1,pch = 16, col = "#005588")
+    }
+    
+    try(abline(lm(as.formula(paste0(commune_pop,"~",commune_factor)), data = factor_pop)))
+    
+  }
+}
+
+commune_plot("Bellikon")
+
+# Factor Plots ----
+factor_plot <- function(factor,df,lag){
+  windows()
+  par(mfrow=c(5,6),mar=c(3,3,3,1))
   for (i in 1:length(commune)) {
     c <- gsub("\\(AG)|", "",commune[i]) %>%
       str_trim()
     #population on the y-axis
     commune_pop <- paste0("pop_",c)
     #factor on the x-axis
-    commune_factor <- colnames(dplyr::select(factor_pop, contains(c) & starts_with(factor)))[1]
-    plot(factor_pop[[commune_factor]],
-         factor_pop[[commune_pop]],
-         main=c,xlab=factor,ylab="",line=1,pch = 16, col = "#005588")
+    commune_factor <- colnames(dplyr::select(df, contains(c) & starts_with(paste0(factor,"_"))))[1]
+    
+    y <- df[[commune_pop]][-is.na(df[[commune_factor]])]
+    x <- df[[commune_factor]][-is.na(df[[commune_factor]])]
+    x <- df[[commune_factor]][-is.na(df[[commune_pop]])]
+    y <- df[[commune_pop]][-is.na(df[[commune_pop]])]
+    
+    if(missing(lag)) {
+      plot(x,y,main=c,xlab=factor,ylab="",line=1,pch = 16, col = "#005588")
+    }
+    else {
+      plot(x[-c(1:lag)],y[-c(length(y):(length(y)-lag+1))],main=paste(c,"lag:",lag),xlab=factor,ylab="",line=1,pch = 16, col = "#005588")
+    }
   
-    try(abline(lm(as.formula(paste0(commune_pop,"~",commune_factor)), data = factor_pop)))
+    try(abline(lm(as.formula(paste0(commune_pop,"~",commune_factor)), data = df)))
     
   }
 }
+
+
+
 #Plot all for 1 factor
-#"gws","ent","services","ov","house","rent","edu","shop","health","entertainment"
-windows()
-par(mfrow=c(5,6),mar=c(3,3,3,1))
-factor_plot("ent")
+#"gws","ent","services","house","rent","edu","health","entertainment"
 
+factor_plot("house",factor_pop)
 
+acf(factor_pop$rent_Baden,na.action = na.pass)
 
 # Cor Plots ----
 windows()
 par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+corrplot(cor_house,tl.cex = 0.8,number.cex = 0.8,title="House",mar=c(0,0,1,0),addCoef.col = "black")
 
-corrplot(cor_edu,tl.cex = 0.8,number.cex = 0.8,addCoef.col = "black" )
+# Pair Plots ----
+pair_plot <- function(commune){
+  windows()
+  par(mar=c(1,1,1,1))
+  df <- dplyr::select(factor_pop, contains(paste0("_",commune)))
+  pairs(df)
+}
+pair_plot("Baden")
+
+# Multiple Cor Plots ----
+windows()
+par(mfrow=c(1,4),mar=c(3,3,3,1))
+
+
+multi_cor_plot <- function(c_plot, factor_list) {
+  c_pop <- colnames(dplyr::select(factor_pop,starts_with(paste0("pop_",c_plot))))[1]
+  for (factor in 1:length(factor_list)){
+    c_factor <- colnames(dplyr::select(factor_pop,starts_with(paste0(factor_list[factor],"_",c_plot))))[1]
+    lm_formula <- as.formula(paste(c_pop,"~",c_factor))
+    lm_plot <- lm(lm_formula, data=factor_pop)
+    print(factor_list[factor])
+    plot(lm_plot)
+  }
+}
+baden_factors <- c("ent","health","house","rent","entertainment","edu","rent")
+multi_cor_plot("Baden",baden_factors)
+
+windows()
+par(mfrow=c(3,4),mar=c(3,3,3,1))
+lm_lin <- lm(pop_Baden~house_Baden, data=factor_pop)
+lm_tl <- lm(pop_Baden[-1]~house_Baden[-1], data=factor_pop)
+lm_squared <- lm(pop_Baden~entertainment_Baden + I(-entertainment_Baden^2), data=factor_pop)
+lm_transformed <- lm(pop_Baden[-1]~house_Baden[-1] + I(exp(house_Baden[-1])), data=factor_pop)
+summary(lm_tl)
+summary(lm_lin)
+
+plot(lm_lin)
+plot(lm_tl)
+plot(lm_squared)
+plot(lm_transformed)
+# lm Plots ----
+windows()
+par(mfrow=c(1,4),mar=c(3,3,3,1))
+plot(lm_Birmi_house)
 
 # Plots ----
 
+
+
 windows()
-par(mfrow=c(5,6),mar=c(3,3,3,1))
 par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+
+pairs(dplyr::select(factor_pop,contains("ent_"))[1:7])
+
 analysis_colour(gws_tot,
               "Baden",
               "Population in relation to amount of Buildings",
@@ -414,8 +626,14 @@ plot(factor_pop$rent_Baden,factor_pop$pop_Baden,pch = 16, col = "#009999")
 plot(lm_ent$residuals,pch = 16, col = "#009999")
 plot(cooks.distance(lm_ent),pch = 16, col = "#009999")
 
-
+ggplot(data = factor_pop, aes(house_Baden,pop_Birmenstorf)) +
+  geom_point(colour = "#005599",size=2)+
+  xlab("House Prices per m^2 in Baden")+
+  ylab("Population in Birmenstorf")+
+  theme_minimal()
 #
+
+write.csv(factor_pop,"final_dataset.csv")
 
 # Legacy ----
 r_squared <- matrix(0, nrow = length(commune), ncol= 10)
@@ -485,3 +703,16 @@ for (c in 1:length(commune)) {
     }
   }
 }
+
+# Factors ----
+factors <- c("ent","house","rent","edu","health","entertainment")
+
+yrs <- factor_pop$Years
+# Analysis ----
+commune # list of all communes
+factors # List of all factors
+commune_plot("Baden")
+factor_plot("house",factor_pop)
+correlation_matrix(cor_housem,df=factor_pop)
+fpop_factor_plot("house")
+pair_plot("Baden")
