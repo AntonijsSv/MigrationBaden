@@ -4,6 +4,8 @@
 # Find out more about building applications with Shiny here:
 #
 #    http://shiny.rstudio.com/
+
+# Libraries ----
 library(rstudioapi)
 library(tidyverse) 
 library(dplyr)
@@ -17,6 +19,7 @@ library(readxl)
 library(shiny)
 library(magick)
 
+#Politics ----
 #canton_geo = read_sf("Boundary_Data/g2k23.shp")
 
 #country_geo= read_sf("Boundary_Data/g2l23.shp")
@@ -44,11 +47,12 @@ gemeinden_baden <- read_excel("2021_Gemeinden.xlsx") %>% #List and Population of
 #for all municipalities outside Baden, this will create NA, which is then filtered out
 gemeinden_coords <- left_join(municipality_geo,gemeinden_baden, by="GMDNR") %>% 
   filter(!is.na(Gemeinde))
+# map ----
 map500 <- raster("Maps/Baden500_excess.tif")%>% 
   as("SpatialPixelsDataFrame") %>% #Turn into dataframe to plot into ggplot
   as.data.frame() %>%
   rename(relief = `Baden500_excess`)
-
+ #
 legend_options <- c("GPS %", "SP %", "GLP %", "CVP %", "FDP %", "SVP %")
 party_options <- c(6,4,7,3,2,5)
 baden_map <- function(visual_data, fill_data, legend)
