@@ -532,6 +532,7 @@ acf(factor_pop$rent_Baden,na.action = na.pass)
 corr_matrix_factor <- function(factor_x,factor_y,df,coef_col){
   x <- dplyr::select(df, starts_with(paste0(factor_x,"_")))
   y <- dplyr::select(df,starts_with(paste0(factor_y,"_")))
+
   y <- y[complete.cases(x),]
   x <- x[complete.cases(x),]
   x <- x[complete.cases(y),]
@@ -545,6 +546,7 @@ corr_matrix_factor <- function(factor_x,factor_y,df,coef_col){
 corr_matrix_commune <- function(commune,df){
   x <- dplyr::select(df, contains(paste0("_",commune)))
   y <- dplyr::select(df,starts_with("pop_"))
+
   y <- y[complete.cases(x),]
   x <- x[complete.cases(x),]
   x <- x[complete.cases(y),]
@@ -567,6 +569,7 @@ cm_commune_factor <- function(commune,df){
 windows()
 par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
 corrplot(cor_house,tl.cex = 0.8,number.cex = 0.8,title="house",mar=c(0,0,1,0),addCoef.col = "black")
+
 corr_matrix_factor("house",factor_pop)
 corr_matrix_commune("Baden",factor_pop)
 # Pair Plots ----
@@ -751,6 +754,7 @@ commune # list of all communes
 factors # List of all factors
 commune_plot("Baden")
 factor_plot("house",factor_pop)
+<<<<<<< HEAD
 commune
 corr_matrix_commune("Ehrendingen",factor_pop)
 
@@ -901,3 +905,11 @@ plot(lm_Ehrendingen)
 
 
 
+
+corr_matrix_commune("Baden",factor_pop)
+corr_matrix_factor("house",factor_pop)
+fpop_factor_plot("house")
+pair_plot("Baden")
+
+# Multi-Variable Lm regression ----
+lm
