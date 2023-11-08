@@ -207,13 +207,18 @@ ui <- fluidPage(
       ),
       h4(strong("Migration Factors")),
       useShinyjs(),
-      sliderInput(inputId = "services",
-                  label = "Services",
+      sliderInput(inputId = "edu",
+                  label = "Education services",
                   min = -100,
                   max = 100,
                   value = 0),
-      sliderInput(inputId = "work",
-                  label = "Job Opportunities",
+      sliderInput(inputId = "entertainment",
+                  label = "Entertainment Services",
+                  min = -100,
+                  max = 100,
+                  value = 0),
+      sliderInput(inputId = "health",
+                  label = "Health Services",
                   min = -100,
                   max = 100,
                   value = 0),
@@ -222,16 +227,12 @@ ui <- fluidPage(
                   min = -100,
                   max = 100,
                   value = 0),
-      sliderInput(inputId = "rent",
-                  label = "Rental Prices",
+      sliderInput(inputId = "jobs",
+                  label = "Job Opportunitiy",
                   min = -100,
                   max = 100,
                   value = 0),
-      sliderInput(inputId = "ov",
-                  label = "Public Transport",
-                  min = -100,
-                  max = 100,
-                  value = 0)
+      actionButton("go", "GO")
     ),                
                 #Main Part of Website (displaying map & Slider values)
                 mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop down menu and moving the sliders on the left the migration factors can be adjusted for a certain municipality and the map will display the change in population of all municipalities."),
@@ -242,6 +243,10 @@ ui <- fluidPage(
 )
 # Define server logic ----
 server <- function(input, output) {
+  observeEvent(input$go, {
+    showNotification("GO button pressed.", type = "message", duration = 15000)
+  })
+  
   output$selected_option <- renderText({
     paste("You selected:", input$choice)
   })
