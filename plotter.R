@@ -9,6 +9,7 @@ library(readxl)
 library(patchwork)
 library(ggnewscale)
 library(corrplot)
+library(car)
 
 # General Files ----
 #Shape data for the municipality boundaries
@@ -245,14 +246,16 @@ services <- c("B0835AS",
 services_tot <- multiple_values(statent,services)
 colnames(services_tot)[2:ncol(services_tot)] <- paste0("services_",commune)
 
-#factor_pop <- full_join(factor_pop,services_tot, by = "Years")
+factor_pop <- full_join(factor_pop,services_tot, by = "Years")
 
 #Public Transport ---
 pt <- c("train","bus")
 public_transport <- multiple_values(ov,pt)
 colnames(public_transport)[2:ncol(public_transport)] <- paste0("ov_",commune)
-
-#factor_pop <- full_join(factor_pop,public_transport, by = "Years")
+for (col in 1:ncol(public_transport)) {
+  public_transport[[col]] <- as.double(public_transport[[col]])
+}
+factor_pop <- full_join(factor_pop,public_transport, by = "Years")
 
 #House & Rent Prices ---
 house <- dataset(as.data.frame(house_prices),"2")
@@ -314,7 +317,6 @@ for (row in 1:nrow(d_factor_pop)) {
 }
 d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]
 
-weak_cor <- dplyr::select(factor_pop,Remetschwil,Bellikon, Oberrohrdorf)
   
 # fpop ----
 df0 <-
@@ -404,7 +406,6 @@ for (col in 1:ncol(ov_pop)){
 
 
 
-# Multi-Variable Lm regression
 # Corrplots ----
 single_factor_pop_dfs <-paste0("pop_",factors)
 
@@ -429,7 +430,7 @@ correlation_matrix <- function(factor_list, df, time_delay) {
   for (factor in 1:length(factors)) {
     cor_factor_name <- factor_list[factor]
     x <- dplyr::select(df, starts_with(paste0(factors[factor],"_")))
-    y <- dplyr::select(df,starts_with("pop"))
+    y <- dplyr::select(df,starts_with("pop_"))
     y <- y[complete.cases(x),]
     x <- x[complete.cases(x),]
     x <- x[complete.cases(y),]
@@ -528,10 +529,49 @@ factor_plot("house",factor_pop)
 acf(factor_pop$rent_Baden,na.action = na.pass)
 
 # Cor Plots ----
+corr_matrix_factor <- function(factor_x,factor_y,df,coef_col){
+  x <- dplyr::select(df, starts_with(paste0(factor_x,"_")))
+  y <- dplyr::select(df,starts_with(paste0(factor_y,"_")))
+
+  y <- y[complete.cases(x),]
+  x <- x[complete.cases(x),]
+  x <- x[complete.cases(y),]
+  y <- y[complete.cases(y),]
+  cor_factor <- cor(x,y)
+  windows()
+  par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+  corrplot(cor_factor,tl.cex = 0.8,number.cex = 0.8,title=paste(factor_y,"vs",factor_x),mar=c(0,0,1,0),addCoef.col = coef_col)
+}
+
+corr_matrix_commune <- function(commune,df){
+  x <- dplyr::select(df, contains(paste0("_",commune)))
+  y <- dplyr::select(df,starts_with("pop_"))
+
+  y <- y[complete.cases(x),]
+  x <- x[complete.cases(x),]
+  x <- x[complete.cases(y),]
+  y <- y[complete.cases(y),]
+  cor_factor <- cor(x,y)
+  windows()
+  par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+  corrplot(cor_factor,tl.cex = 0.8,number.cex = 0.8,title=commune,mar=c(0,0,1,0),addCoef.col = "gray50")
+}
+
+cm_commune_factor <- function(commune,df){
+  x <- dplyr::select(df, contains(paste0("_",commune)))
+  x <- x[complete.cases(x),]
+  cor_factor <- cor(x,x)
+  windows()
+  par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
+  corrplot(cor_factor,tl.cex = 0.8,number.cex = 0.8,title=commune,mar=c(0,0,1,0),addCoef.col = "gray50")
+}
+
 windows()
 par(mar=c(1,1,1,1),cex.axis=0.7, cex.lab= 0.7)
-corrplot(cor_house,tl.cex = 0.8,number.cex = 0.8,title="House",mar=c(0,0,1,0),addCoef.col = "black")
+corrplot(cor_house,tl.cex = 0.8,number.cex = 0.8,title="house",mar=c(0,0,1,0),addCoef.col = "black")
 
+corr_matrix_factor("house",factor_pop)
+corr_matrix_commune("Baden",factor_pop)
 # Pair Plots ----
 pair_plot <- function(commune){
   windows()
@@ -539,7 +579,7 @@ pair_plot <- function(commune){
   df <- dplyr::select(factor_pop, contains(paste0("_",commune)))
   pairs(df)
 }
-pair_plot("Baden")
+pair_plot("Gebenstorf")
 
 # Multiple Cor Plots ----
 windows()
@@ -706,6 +746,7 @@ for (c in 1:length(commune)) {
 
 # Factors ----
 factors <- c("ent","house","rent","edu","health","entertainment")
+factors_v2 <- c("ent", "house", "edu")
 
 yrs <- factor_pop$Years
 # Analysis ----
@@ -713,6 +754,162 @@ commune # list of all communes
 factors # List of all factors
 commune_plot("Baden")
 factor_plot("house",factor_pop)
-correlation_matrix(cor_housem,df=factor_pop)
+<<<<<<< HEAD
+commune
+corr_matrix_commune("Ehrendingen",factor_pop)
+
+corr_matrix_factor("ent","house",factor_pop,"gray50")
+cm_commune_factor ("Wettingen",factor_pop)
+fpop_factor_plot("house")
+pair_plot("Mellingen")
+
+# Multi-Variable Lm regression ----
+lm_diagnosis <- function(lm) {
+  print(paste("vif: Varience Inflation Factor, coliniearity check",vif(lm)))
+  print(paste("AIC: Akaike Information criterion, Amount of Information Lost by using Model",AIC(lm)))
+  plot(lm)
+  
+}
+
+lm_Baden <- lm(pop_Baden~rent_Baden, data = factor_pop)
+summary(lm_Baden)
+plot(lm_Baden)
+AIC(lm_Baden)
+vif(lm_Baden)
+
+lm_Bellikon <- lm(pop_Bellikon~, data = factor_pop)
+summary(lm_Bellikon)
+plot(lm_Bellikon)
+#Find other factors
+
+lm_Bergdietikon <- lm(pop_Bergdietikon~rent_Bergdietikon, data = factor_pop)
+summary(lm_Bergdietikon)
+plot(lm_Bergdietikon)
+
+
+lm_Birmenstorf <- lm(pop_Birmenstorf~house_Birmenstorf..AG., data = factor_pop)
+summary(lm_Birmenstorf)
+plot(lm_Birmenstorf)
+#try to explain through house price curve
+# 13 -> influential point
+
+lm_Ennetbaden <- lm(pop_Ennetbaden~rent_Ennetbaden, data = factor_pop)
+summary(lm_Ennetbaden)
+plot(lm_Ennetbaden)
+
+lm_Fislisbach <- lm(pop_Fislisbach~house_Fislisbach+health_Fislisbach, data = factor_pop)
+summary(lm_Fislisbach)
+plot(lm_Fislisbach)
+
+lm_Freienwil <- lm(pop_Freienwil~house_Freienwil, data = factor_pop)
+summary(lm_Freienwil)
+plot(lm_Freienwil)
+#Both house and rent are good, which to pick?
+
+lm_Gebenstorf <- lm(pop_Gebenstorf~house_Gebenstorf+ent_Gebenstorf, data =factor_pop)
+summary(lm_Gebenstorf)
+plot(lm_Gebenstorf)
+# ent std. error is too much
+
+lm_Killwangen <- lm(pop_Killwangen~house_Killwangen+ent_Killwangen+ent_Spreitenbach, data = factor_pop)
+summary(lm_Killwangen)
+plot(lm_Killwangen)
+#ent Spreitenbach p slightly high
+
+lm_Künten <- lm(pop_Künten~house_Künten+health_Künten, data = factor_pop)
+summary(lm_Künten)
+plot(lm_Künten)
+#health std error too high
+
+
+lm_Mägenwil <- lm(pop_Mägenwil~rent_Mägenwil+ent_Mägenwil, data = factor_pop)
+summary(lm_Mägenwil)
+plot(lm_Mägenwil)
+#2 influential points with edu
+#0.55 ent p-val
+
+lm_Mellingen <- lm(pop_Mellingen~rent_Mellingen + ent_Mellingen, data = factor_pop)
+summary(lm_Mellingen)
+plot(lm_Mellingen)
+#ent std. error high
+#rent has a sine wave like residuals and 1 influential point
+
+lm_Neuenhof <- lm(pop_Neuenhof~house_Neuenhof, data = factor_pop)
+summary(lm_Neuenhof)
+plot(lm_Neuenhof)
+
+lm_Niederrohrdorf <- lm(pop_Niederrohrdorf~house_Niederrohrdorf, data =factor_pop)
+summary(lm_Niederrohrdorf)
+plot(lm_Niederrohrdorf)
+
+lm_Oberrohrdorf <- lm(pop_Oberrohrdorf~house_Oberrohrdorf, data =factor_pop)
+summary(lm_Oberrohrdorf)
+plot(lm_Oberrohrdorf)
+
+lm_Obersiggenthal <- lm(pop_Obersiggenthal~house_Obersiggenthal, data =factor_pop)
+summary(lm_Obersiggenthal)
+plot(lm_Obersiggenthal)
+#ent 0.6 pval not so good
+
+lm_Remetschwil <- lm(pop_Remetschwil~, data =factor_pop)
+summary(lm_Remetschwil)
+plot(lm_Remetschwil)
+#nothing
+
+lm_Spreitenbach <- lm(pop_Spreitenbach~rent_Spreitenbach + health_Spreitenbach, data =factor_pop)
+summary(lm_Spreitenbach)
+plot(lm_Spreitenbach)
+#house s curve
+#ent 0.9 pval
+#health ok but pairs doesnt say so
+
+
+lm_Stetten <- lm(pop_Stetten~rent_Stetten, data =factor_pop)
+summary(lm_Stetten)
+plot(lm_Stetten)
+
+lm_Turgi <- lm(pop_Turgi~house_Turgi + ent_Turgi, data = factor_pop[-c(12,13),])
+summary(lm_Turgi)
+plot(lm_Turgi)
+AIC(lm_Turgi)
+vif(lm_Turgi)
+
+lm_Untersiggenthal <- lm(pop_Untersiggenthal~house_Untersiggenthal + ent_Untersiggenthal, data = factor_pop)
+summary(lm_Untersiggenthal)
+plot(lm_Untersiggenthal)
+#ent_Untersiggenthal good aswell -> pairs
+cm_commune_factor ("Untersiggenthal",factor_pop)
+vif(lm_Untersiggenthal)
+lm_diagnosis(lm_Untersiggenthal)
+
+lm_Wettingen <- lm(pop_Wettingen~rent_Wettingen, data = factor_pop)
+summary(lm_Wettingen)
+lm_diagnosis(lm_Wettingen)
+
+lm_Wohlenschwil <- lm(pop_Wohlenschwil~house_Wohlenschwil, data = factor_pop)
+summary(lm_Wohlenschwil)
+plot(lm_Wohlenschwil)
+
+lm_Würenlingen <- lm(pop_Würenlingen~rent_Würenlingen, data =factor_pop)
+summary(lm_Würenlingen)
+plot(lm_Würenlingen)
+
+lm_Würenlos <- lm(pop_Würenlos~house_Würenlos, data =factor_pop)
+summary(lm_Würenlos)
+plot(lm_Würenlos)
+
+lm_Ehrendingen <- lm(pop_Ehrendingen~rent_Ehrendingen, data =factor_pop)
+summary(lm_Ehrendingen)
+plot(lm_Ehrendingen)
+#Problematic
+
+
+
+
+corr_matrix_commune("Baden",factor_pop)
+corr_matrix_factor("house",factor_pop)
 fpop_factor_plot("house")
 pair_plot("Baden")
+
+# Multi-Variable Lm regression ----
+lm
