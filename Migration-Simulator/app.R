@@ -113,7 +113,7 @@ baden_commune_map <- function(visual_data,fill_data,legend)
       data = visual_data,
       aes(fill=fill_data),
       color = "black",
-      size = 0.5) +
+      size = 0.5 ) +
     
     scale_fill_viridis(#Set a custom fill for the data to be visualised
       option = "magma",
@@ -205,42 +205,34 @@ ui <- fluidPage(
                               "Ehrendingen"
                   )
       ),
-      h4(strong("Migration Factors")),
+      h4(strong("Migration Factors:")),
       useShinyjs(),
-      sliderInput(inputId = "edu",
-                  label = "Education services",
-                  min = -100,
-                  max = 100,
-                  value = 0),
-      sliderInput(inputId = "entertainment",
-                  label = "Entertainment Services",
-                  min = -100,
-                  max = 100,
-                  value = 0),
       sliderInput(inputId = "health",
                   label = "Health Services",
                   min = -100,
                   max = 100,
                   value = 0),
       sliderInput(inputId = "house",
-                  label = "House Prices",
+                  label = "House/Rental Prices",
                   min = -100,
                   max = 100,
                   value = 0),
       sliderInput(inputId = "jobs",
-                  label = "Job Opportunitiy",
+                  label = "Job Opportunities",
                   min = -100,
                   max = 100,
                   value = 0),
-      actionButton("go", "GO")
+      actionButton("go", "GO"),
+      tableOutput("values")
     ),                
                 #Main Part of Website (displaying map & Slider values)
                 mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop down menu and moving the sliders on the left the migration factors can be adjusted for a certain municipality and the map will display the change in population of all municipalities."),
                           plotOutput("map"),
-                          tableOutput("values"),
+                          
                 )
   )
 )
+
 # Define server logic ----
 server <- function(input, output) {
   observeEvent(input$go, {
@@ -250,15 +242,22 @@ server <- function(input, output) {
   output$selected_option <- renderText({
     paste("You selected:", input$choice)
   })
+  
+  # Reactive expression to create a data frame of all input values
   sliderValues <- reactive({
-
-    
-  })
+    health_value <- input$health/100
+    house_value <- input$house/100
+    jobs_value <- input$jobs/100
+    data.frame(
+      Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:"),
+      Value = c(health_value, house_value, jobs_value),
+      stringsAsFactors = FALSE
+  )
+})
   
-  output$values <- renderTable({#Table displays the input values of slider
+  output$values <- renderTable({
     sliderValues()
-  })
-  
+  })  
   
   
   output$map <- renderPlot({
