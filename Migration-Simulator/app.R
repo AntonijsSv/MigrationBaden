@@ -226,7 +226,7 @@ ui <- fluidPage(
       tableOutput("values")
     ),                
                 #Main Part of Website (displaying map & Slider values)
-                mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop down menu and moving the sliders on the left the migration factors can be adjusted for a certain municipality and the map will display the change in population of all municipalities."),
+                mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
                           plotOutput("map"),
                           
                 )
@@ -235,8 +235,19 @@ ui <- fluidPage(
 
 # Define server logic ----
 server <- function(input, output) {
+  # Create reactive values to store the slider values
+  sliderValues <- reactiveValues(
+    health_value = 1,
+    house_value = 1,
+    jobs_value = 1
+  )
+  
   observeEvent(input$go, {
-    showNotification("GO button pressed.", type = "message", duration = 15000)
+    showNotification("GO button pressed.", type = "message", duration = 1000)
+    # Update the reactive values
+    sliderValues$health_value <- 1 + input$health / 100
+    sliderValues$house_value <- 1 + input$house / 100
+    sliderValues$jobs_value <- 1 + input$jobs / 100
   })
   
   output$selected_option <- renderText({
@@ -244,36 +255,30 @@ server <- function(input, output) {
   })
   
   # Reactive expression to create a data frame of all input values
-  sliderValues <- reactive({
-    health_value <- input$health/100
-    house_value <- input$house/100
-    jobs_value <- input$jobs/100
+  sliderData <- reactive({
     data.frame(
       Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:"),
-      Value = c(health_value, house_value, jobs_value),
+      Value = c(sliderValues$health_value, sliderValues$house_value, sliderValues$jobs_value),
       stringsAsFactors = FALSE
-  )
-})
+    )
+  })
   
   output$values <- renderTable({
-    sliderValues()
-  })  
-  
+    sliderData()
+  })
   
   output$map <- renderPlot({
-    visual_option <- (sliderValues()[1,2])
+    visual_option <- sliderData()[1, 2]
     numeric_visual_option <- as.numeric(visual_option)
     
     options(
       shiny.reactlog = TRUE,
       shiny.reactlog_interval = 1000
     )
-    #Visualize all the maps
+    # Visualize all the maps
     baden_commune_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Population")
-
-
-    
-  }, width = 900, height = 600) 
+  }, width = 900, height = 600)
 }
+
 # Run the app ----
 shinyApp(ui = ui, server = server)
