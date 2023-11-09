@@ -318,8 +318,7 @@ for (row in 1:nrow(d_factor_pop)) {
   rownames(d_factor_pop) [row] <- paste0(d_factor_pop[row+1,1],"_",d_factor_pop[row,1])
   d_factor_pop[row,c(2:ncol(d_factor_pop))] <- d_factor_pop[row,c(2:ncol(d_factor_pop))] - d_factor_pop[row+1,c(2:ncol(d_factor_pop))]
 }
-d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]
-
+d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]b
   
 # fpop ----
 df0 <-
@@ -1056,3 +1055,21 @@ fpop_factor_plot("house")
 pair_plot("Baden")
 
 
+
+
+#population growth ----
+
+pop_growth <- dplyr::select(factor_pop, contains("Year") |contains("pop"))
+pop_growth$pop_tot <- 0
+pop_growth$pop_growth <- 0
+
+for (yr in 1:nrow(pop_growth)) {
+  pop_growth$pop_tot[yr] <- sum(pop_growth[yr,c(2:27)], na.rm=TRUE)
+}
+for (yr in 1:nrow(pop_growth)) {
+  pop_growth$pop_growth[yr] <- pop_growth$pop_tot[yr]-pop_growth$pop_tot[yr+1]
+}
+pop_growth <- dplyr::select(pop_growth,Years,pop_growth,pop_tot)
+pop_growth <- pop_growth[-c(1,13),]
+pop_growth$percent <- pop_growth$pop_growth/pop_growth$pop_tot
+mean_growth <- mean(pop_growth$percent)
