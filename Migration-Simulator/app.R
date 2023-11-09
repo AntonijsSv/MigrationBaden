@@ -245,9 +245,12 @@ server <- function(input, output) {
   
   # Reactive expression to create a data frame of all input values
   sliderValues <- reactive({
+    health_value <- input$health/100
+    house_value <- input$house/100
+    jobs_value <- input$jobs/100
     data.frame(
       Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:"),
-      Value = c(input$health, input$house, input$jobs),
+      Value = c(health_value, house_value, jobs_value),
       stringsAsFactors = FALSE
   )
 })
