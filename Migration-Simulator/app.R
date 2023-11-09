@@ -222,24 +222,35 @@ ui <- fluidPage(
                   min = -100,
                   max = 100,
                   value = 0),
+      sliderInput(inputId = "edu",
+                  label = "Education",
+                  min = -100,
+                  max = 100,
+                  value = 0),
       actionButton("go", "GO"),
+      wellPanel(
+        textOutput("selected_option")
+      ),
       tableOutput("values")
     ),                
                 #Main Part of Website (displaying map & Slider values)
                 mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
-                          plotOutput("map"),
+                          plotOutput("map")
                           
                 )
   )
 )
 
-# Define server logic ----
 server <- function(input, output) {
+  # Create a reactiveVal to store the commune
+  selected_commune <- reactiveVal("Baden")
+  
   # Create reactive values to store the slider values
   sliderValues <- reactiveValues(
     health_value = 1,
     house_value = 1,
-    jobs_value = 1
+    jobs_value = 1,
+    edu_value = 1
   )
   
   observeEvent(input$go, {
@@ -248,17 +259,21 @@ server <- function(input, output) {
     sliderValues$health_value <- 1 + input$health / 100
     sliderValues$house_value <- 1 + input$house / 100
     sliderValues$jobs_value <- 1 + input$jobs / 100
+    sliderValues$edu_value <- 1 + input$edu / 100
+    
+    # Update the selected commune when the button is pressed
+    selected_commune(input$choice)
   })
   
   output$selected_option <- renderText({
-    paste("You selected:", input$choice)
+    paste("You selected:", selected_commune())  # Use the updated commune variable
   })
   
   # Reactive expression to create a data frame of all input values
   sliderData <- reactive({
     data.frame(
-      Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:"),
-      Value = c(sliderValues$health_value, sliderValues$house_value, sliderValues$jobs_value),
+      Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:", "Education:"),
+      Value = c(sliderValues$health_value, sliderValues$house_value, sliderValues$jobs_value, sliderValues$edu_value),
       stringsAsFactors = FALSE
     )
   })
@@ -276,7 +291,7 @@ server <- function(input, output) {
       shiny.reactlog_interval = 1000
     )
     # Visualize all the maps
-    baden_commune_map(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Population")
+    commune_general_info(gemeinden_coords, gemeinden_coords$Gesamtbevölkerung, "Population")
   }, width = 900, height = 600)
 }
 
