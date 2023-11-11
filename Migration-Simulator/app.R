@@ -488,7 +488,6 @@ ui <- fluidPage(
   ))
 
 # Server ----
-# Server ----
 server <- function(input, output) {
   # Create a reactiveVal to store the commune
   selected_commune <- reactiveVal("Baden")
