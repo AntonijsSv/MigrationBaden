@@ -1,5 +1,4 @@
 #Program to plot data
-
 # Libraries ----
 library(tidyverse)
 library(sf) # spatial data handling
@@ -255,7 +254,7 @@ colnames(public_transport)[2:ncol(public_transport)] <- paste0("ov_",commune)
 for (col in 1:ncol(public_transport)) {
   public_transport[[col]] <- as.double(public_transport[[col]])
 }
-factor_pop <- full_join(factor_pop,public_transport, by = "Years")
+#factor_pop <- full_join(factor_pop,public_transport, by = "Years")
 
 #House & Rent Prices ---
 house <- dataset(as.data.frame(house_prices),"2")
@@ -291,6 +290,8 @@ colnames(entertainment)[2:ncol(entertainment)] <- paste0("entertainment_",colnam
 factor_pop <- full_join(factor_pop,entertainment, by = "Years")
 
 for (col in 1:ncol(factor_pop)) {
+  colnames(factor_pop[col]) <- gsub("\\(AG)|", "", colnames(factor_pop[col]))%>%
+    str_trim()
   factor_pop[[col]] <- as.numeric(factor_pop[[col]])
 }
 
@@ -305,6 +306,8 @@ last_yr <- factor_pop[13,]
 factor_pop <- factor_pop[-13,]
 factor_pop <- rbind(last_yr,factor_pop)
 
+factor_pop$house_Neuenhof <- factor_pop$house_Neuenhof[c(1,7:13,2:6)] #The data somehow got switched up in procedures before
+
 # d_factor_pop ----
 d_factor_pop <- factor_pop
 for (col in 1:ncol(d_factor_pop)) {
@@ -315,8 +318,7 @@ for (row in 1:nrow(d_factor_pop)) {
   rownames(d_factor_pop) [row] <- paste0(d_factor_pop[row+1,1],"_",d_factor_pop[row,1])
   d_factor_pop[row,c(2:ncol(d_factor_pop))] <- d_factor_pop[row,c(2:ncol(d_factor_pop))] - d_factor_pop[row+1,c(2:ncol(d_factor_pop))]
 }
-d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]
-
+d_factor_pop <- d_factor_pop[-nrow(d_factor_pop),]b
   
 # fpop ----
 df0 <-
@@ -376,7 +378,7 @@ fpop_commune_plot <- function(c) {
     theme_gray(base_size = 8)
 }
 
-fpop_factor_plot("rent")
+fpop_factor_plot("house")
 
 # Data Analysis - Regression ----
 
@@ -487,8 +489,6 @@ commune_plot <- function(commune,lag){
     
   }
 }
-
-commune_plot("Bellikon")
 
 # Factor Plots ----
 factor_plot <- function(factor,df,lag){
@@ -754,14 +754,15 @@ commune # list of all communes
 factors # List of all factors
 commune_plot("Baden")
 factor_plot("house",factor_pop)
-<<<<<<< HEAD
 commune
 corr_matrix_commune("Ehrendingen",factor_pop)
 
-corr_matrix_factor("ent","house",factor_pop,"gray50")
-cm_commune_factor ("Wettingen",factor_pop)
-fpop_factor_plot("house")
-pair_plot("Mellingen")
+corr_matrix_factor("rent","house",factor_pop,"gray50")
+cm_commune_factor ("Neuenhof",factor_pop)
+fpop_factor_plot("ent")
+pair_plot("Remetschwil")
+
+
 
 # Multi-Variable Lm regression ----
 lm_diagnosis <- function(lm) {
@@ -771,138 +772,300 @@ lm_diagnosis <- function(lm) {
   
 }
 
-lm_Baden <- lm(pop_Baden~rent_Baden, data = factor_pop)
+lm_Baden <- lm(pop_Baden~rent_Baden
+               + edu_Baden
+               + ent_Baden
+               + health_Baden
+                 #ent_Mägenwil 
+                 
+               
+               ,data = factor_pop)
 summary(lm_Baden)
 plot(lm_Baden)
 AIC(lm_Baden)
 vif(lm_Baden)
 
-lm_Bellikon <- lm(pop_Bellikon~, data = factor_pop)
+lm_Bellikon <- lm(pop_Bellikon~rent_Bellikon
+                  + edu_Bellikon
+                  + ent_Bellikon
+                  + health_Bellikon
+                    ,data = factor_pop)
 summary(lm_Bellikon)
 plot(lm_Bellikon)
+vif(lm_Bellikon)
+AIC(lm_Bellikon)
 #Find other factors
 
-lm_Bergdietikon <- lm(pop_Bergdietikon~rent_Bergdietikon, data = factor_pop)
+lm_Bergdietikon <- lm(pop_Bergdietikon~rent_Bergdietikon
+                        +edu_Bergdietikon
+                        +health_Bergdietikon
+                        +ent_Bergdietikon
+                        +ent_Bellikon
+                        , data = factor_pop)
 summary(lm_Bergdietikon)
 plot(lm_Bergdietikon)
+vif(lm_Bergdietikon)
 
-
-lm_Birmenstorf <- lm(pop_Birmenstorf~house_Birmenstorf..AG., data = factor_pop)
+lm_Birmenstorf <- lm(pop_Birmenstorf~house_Birmenstorf..AG.
+                       +ent_Birmenstorf
+                       +health_Birmenstorf 
+                       +edu_Birmenstorf
+                       
+                     , data = factor_pop)
 summary(lm_Birmenstorf)
 plot(lm_Birmenstorf)
 #try to explain through house price curve
 # 13 -> influential point
+vif(lm_Birmenstorf)
 
-lm_Ennetbaden <- lm(pop_Ennetbaden~rent_Ennetbaden, data = factor_pop)
+lm_Ennetbaden <- lm(pop_Ennetbaden~rent_Ennetbaden
+                    + edu_Baden
+                    #+ ent_Obersiggenthal
+                    #+ health_Ehrendingen
+                    + health_Ennetbaden
+                     + ent_Ennetbaden + edu_Ennetbaden
+                      , data = factor_pop)
 summary(lm_Ennetbaden)
 plot(lm_Ennetbaden)
+vif(lm_Ennetbaden)
+AIC(lm_Ennetbaden)
 
-lm_Fislisbach <- lm(pop_Fislisbach~house_Fislisbach+health_Fislisbach, data = factor_pop)
+lm_Fislisbach <- lm(pop_Fislisbach~house_Fislisbach
+                    +  health_Fislisbach
+                    +  edu_Fislisbach
+                    + ent_Fislisbach
+                    #+ edu_Niederrohrdorf
+                    #+ health_Baden
+                    
+                    , data = factor_pop)
 summary(lm_Fislisbach)
 plot(lm_Fislisbach)
+vif(lm_Fislisbach)
 
-lm_Freienwil <- lm(pop_Freienwil~house_Freienwil, data = factor_pop)
+lm_Freienwil <- lm(pop_Freienwil~house_Freienwil
+                   + health_Freienwil
+                   + ent_Freienwil
+                   + edu_Freienwil
+                   , data = factor_pop)
 summary(lm_Freienwil)
+vif(lm_Freienwil)
 plot(lm_Freienwil)
-#Both house and rent are good, which to pick?
 
-lm_Gebenstorf <- lm(pop_Gebenstorf~house_Gebenstorf+ent_Gebenstorf, data =factor_pop)
+lm_Gebenstorf <- lm(pop_Gebenstorf~house_Gebenstorf
+                    +ent_Gebenstorf
+                    +health_Gebenstorf
+                    +edu_Gebenstorf
+                    
+                    , data =factor_pop)
 summary(lm_Gebenstorf)
 plot(lm_Gebenstorf)
+vif(lm_Gebenstorf)
 # ent std. error is too much
 
-lm_Killwangen <- lm(pop_Killwangen~house_Killwangen+ent_Killwangen+ent_Spreitenbach, data = factor_pop)
+lm_Killwangen <- lm(pop_Killwangen~house_Killwangen+ent_Killwangen
+                    + edu_Killwangen
+                    + health_Killwangen
+                    , data = factor_pop)
 summary(lm_Killwangen)
 plot(lm_Killwangen)
 #ent Spreitenbach p slightly high
+vif(lm_Killwangen)
 
-lm_Künten <- lm(pop_Künten~house_Künten+health_Künten, data = factor_pop)
+lm_Künten <- lm(pop_Künten~house_Künten
+                + health_Künten
+                + edu_Künten
+                + ent_Künten
+                , data = factor_pop)
 summary(lm_Künten)
 plot(lm_Künten)
+vif(lm_Künten)
+AIC(lm_Künten)
 #health std error too high
 
 
-lm_Mägenwil <- lm(pop_Mägenwil~rent_Mägenwil+ent_Mägenwil, data = factor_pop)
+lm_Mägenwil <- lm(pop_Mägenwil~rent_Mägenwil+ent_Mägenwil
+                  + edu_Mellingen
+                  + edu_Mägenwil
+                  + health_Mägenwil
+                    , data = factor_pop)
 summary(lm_Mägenwil)
 plot(lm_Mägenwil)
+vif(lm_Mägenwil)
 #2 influential points with edu
 #0.55 ent p-val
 
-lm_Mellingen <- lm(pop_Mellingen~rent_Mellingen + ent_Mellingen, data = factor_pop)
+lm_Mellingen <- lm(pop_Mellingen~rent_Mellingen 
+                   + health_Mellingen
+                   + edu_Mellingen
+                   + ent_Mellingen
+                   + ent_Fislisbach
+                   
+                   , data = factor_pop)
 summary(lm_Mellingen)
 plot(lm_Mellingen)
+vif(lm_Mellingen)
 #ent std. error high
 #rent has a sine wave like residuals and 1 influential point
 
-lm_Neuenhof <- lm(pop_Neuenhof~house_Neuenhof, data = factor_pop)
+lm_Neuenhof <- lm(pop_Neuenhof~house_Neuenhof 
+                  + health_Neuenhof + edu_Neuenhof
+                  + ent_Neuenhof
+                  #+ services_Neuenhof
+                  #+ ent_Killwangen
+                  #+ health_Killwangen
+                  #+ent_Ennetbaden
+                  
+                    , data = factor_pop)
 summary(lm_Neuenhof)
+vif(lm_Neuenhof)
+AIC(lm_Neuenhof)
 plot(lm_Neuenhof)
+cm_commune_factor ("Neuenhof",factor_pop)
 
-lm_Niederrohrdorf <- lm(pop_Niederrohrdorf~house_Niederrohrdorf, data =factor_pop)
+lm_Niederrohrdorf <- lm(pop_Niederrohrdorf~house_Niederrohrdorf
+                        + edu_Oberrohrdorf
+                        + ent_Niederrohrdorf
+                        + edu_Niederrohrdorf
+                        + health_Niederrohrdorf
+                        
+                          , data = factor_pop)
 summary(lm_Niederrohrdorf)
+vif(lm_Niederrohrdorf)
 plot(lm_Niederrohrdorf)
 
-lm_Oberrohrdorf <- lm(pop_Oberrohrdorf~house_Oberrohrdorf, data =factor_pop)
+lm_Oberrohrdorf <- lm(pop_Oberrohrdorf~house_Oberrohrdorf
+                      #+ health_Remetschwil
+                      #+ edu_Mellingen
+                      + ent_Oberrohrdorf
+                      + edu_Oberrohrdorf
+                      + health_Oberrohrdorf
+                      , data = factor_pop)
 summary(lm_Oberrohrdorf)
+vif(lm_Oberrohrdorf)
 plot(lm_Oberrohrdorf)
 
-lm_Obersiggenthal <- lm(pop_Obersiggenthal~house_Obersiggenthal, data =factor_pop)
-summary(lm_Obersiggenthal)
+lm_Obersiggenthal <- lm(pop_Obersiggenthal~house_Obersiggenthal
+                        + health_Obersiggenthal
+                        + ent_Obersiggenthal
+                        + edu_Obersiggenthal
+                        #+ edu_Ennetbaden
+                        , data = factor_pop)
+summary(lm_Obersiggenthal) 
+vif(lm_Obersiggenthal)
 plot(lm_Obersiggenthal)
 #ent 0.6 pval not so good
 
-lm_Remetschwil <- lm(pop_Remetschwil~, data =factor_pop)
+lm_Remetschwil <- lm(pop_Remetschwil~
+                       rent_Remetschwil
+                     + edu_Remetschwil
+                     + health_Remetschwil
+                     + ent_Remetschwil
+                     , data = factor_pop)
 summary(lm_Remetschwil)
 plot(lm_Remetschwil)
-#nothing
+#nothingAAAA
 
-lm_Spreitenbach <- lm(pop_Spreitenbach~rent_Spreitenbach + health_Spreitenbach, data =factor_pop)
+lm_Spreitenbach <- lm(pop_Spreitenbach~rent_Spreitenbach + health_Spreitenbach
+                      + ent_Spreitenbach
+                      + edu_Spreitenbach
+                      #+ ent_Würenlos
+                      , data = factor_pop)
 summary(lm_Spreitenbach)
+vif(lm_Spreitenbach)
 plot(lm_Spreitenbach)
 #house s curve
 #ent 0.9 pval
 #health ok but pairs doesnt say so
 
 
-lm_Stetten <- lm(pop_Stetten~rent_Stetten, data =factor_pop)
+lm_Stetten <- lm(pop_Stetten~rent_Stetten
+                 +health_Stetten
+                 +edu_Stetten
+                 +ent_Stetten
+                 #+edu_Baden
+                 , data =factor_pop)
 summary(lm_Stetten)
+vif(lm_Stetten)
 plot(lm_Stetten)
 
-lm_Turgi <- lm(pop_Turgi~house_Turgi + ent_Turgi, data = factor_pop[-c(12,13),])
+lm_Turgi <- lm(pop_Turgi~house_Turgi + ent_Turgi
+               + health_Turgi
+               + edu_Turgi
+                 , data = factor_pop)
 summary(lm_Turgi)
 plot(lm_Turgi)
 AIC(lm_Turgi)
 vif(lm_Turgi)
 
-lm_Untersiggenthal <- lm(pop_Untersiggenthal~house_Untersiggenthal + ent_Untersiggenthal, data = factor_pop)
+lm_Untersiggenthal <- lm(pop_Untersiggenthal~house_Untersiggenthal + ent_Untersiggenthal
+                         +health_Untersiggenthal
+                         +edu_Untersiggenthal
+                         #+ health_Würenlingen
+                         
+                         , data = factor_pop)
 summary(lm_Untersiggenthal)
+vif(lm_Untersiggenthal)
 plot(lm_Untersiggenthal)
 #ent_Untersiggenthal good aswell -> pairs
 cm_commune_factor ("Untersiggenthal",factor_pop)
 vif(lm_Untersiggenthal)
 lm_diagnosis(lm_Untersiggenthal)
 
-lm_Wettingen <- lm(pop_Wettingen~rent_Wettingen, data = factor_pop)
+lm_Wettingen <- lm(pop_Wettingen~rent_Wettingen
+                   +edu_Wettingen
+                   +health_Wettingen
+                   +ent_Wettingen
+                   #+ ent_Würenlos
+                   #+ health_Würenlos
+                   #+ edu_Würenlos
+                   
+                   , data = factor_pop)
 summary(lm_Wettingen)
+vif(lm_Wettingen)
 lm_diagnosis(lm_Wettingen)
 
-lm_Wohlenschwil <- lm(pop_Wohlenschwil~house_Wohlenschwil, data = factor_pop)
+lm_Wohlenschwil <- lm(pop_Wohlenschwil~house_Wohlenschwil
+                      +health_Wohlenschwil
+                      +edu_Wohlenschwil
+                      +ent_Wohlenschwil
+                      , data = factor_pop)
 summary(lm_Wohlenschwil)
 plot(lm_Wohlenschwil)
 
-lm_Würenlingen <- lm(pop_Würenlingen~rent_Würenlingen, data =factor_pop)
+lm_Würenlingen <- lm(pop_Würenlingen~rent_Würenlingen
+                     + health_Würenlingen
+                     + edu_Würenlingen
+                     + ent_Würenlingen
+                     #+edu_Baden
+                     +ent_Untersiggenthal
+                     #+health_Obersiggenthal
+                       , data =factor_pop)
 summary(lm_Würenlingen)
+vif(lm_Würenlingen)
 plot(lm_Würenlingen)
 
-lm_Würenlos <- lm(pop_Würenlos~house_Würenlos, data =factor_pop)
+lm_Würenlos <- lm(pop_Würenlos~house_Würenlos
+                  +health_Würenlos
+                  +edu_Würenlos
+                  + ent_Würenlos
+                  + health_Neuenhof
+                  #+ health_Killwangen
+                  , data =factor_pop)
 summary(lm_Würenlos)
+vif(lm_Würenlos)
 plot(lm_Würenlos)
 
-lm_Ehrendingen <- lm(pop_Ehrendingen~rent_Ehrendingen, data =factor_pop)
+lm_Ehrendingen <- lm(pop_Ehrendingen~rent_Ehrendingen
+                     #+house_Ehrendingen
+                     + health_Ehrendingen
+                     + edu_Ehrendingen
+                     + ent_Ehrendingen
+                     + health_Ennetbaden
+                     #+ health_Baden
+                     , data =factor_pop)
 summary(lm_Ehrendingen)
+vif(lm_Ehrendingen)
 plot(lm_Ehrendingen)
-#Problematic
-
 
 
 
@@ -911,5 +1074,23 @@ corr_matrix_factor("house",factor_pop)
 fpop_factor_plot("house")
 pair_plot("Baden")
 
-# Multi-Variable Lm regression ----
-lm
+
+lm_Baden$coefficients
+lm_Birmenstorf$coefficients
+lm_Ehrendingen$coefficients
+#population growth ----
+
+pop_growth <- dplyr::select(factor_pop, contains("Year") |contains("pop"))
+pop_growth$pop_tot <- 0
+pop_growth$pop_growth <- 0
+
+for (yr in 1:nrow(pop_growth)) {
+  pop_growth$pop_tot[yr] <- sum(pop_growth[yr,c(2:27)], na.rm=TRUE)
+}
+for (yr in 1:nrow(pop_growth)) {
+  pop_growth$pop_growth[yr] <- pop_growth$pop_tot[yr]-pop_growth$pop_tot[yr+1]
+}
+pop_growth <- dplyr::select(pop_growth,Years,pop_growth,pop_tot)
+pop_growth <- pop_growth[-c(1,13),]
+pop_growth$percent <- pop_growth$pop_growth/pop_growth$pop_tot
+mean_growth <- mean(pop_growth$percent)
