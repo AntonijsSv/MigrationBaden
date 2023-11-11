@@ -303,6 +303,7 @@ slider_to_factor <- function(slider_input) {
     #print(factor_i)
     f_change[[f]][2] <- factor_i
   }
+  #view(f_change)
   return(f_change)
 }
 
@@ -406,7 +407,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
 }
 
 simulate <- function(slider_input,pop,legend,arrow_limit) {
-  factor_change <- slider_to_factor(slider_demo)
+  factor_change <- slider_to_factor(slider_input)
   pop$new_pop <- factor_to_pop(factor_change,fpop,pop$new_pop)
   pop <- pop_analysis(pop)
   plot_df <- commune_geo
@@ -414,7 +415,7 @@ simulate <- function(slider_input,pop,legend,arrow_limit) {
   p <- baden_commune_map(plot_df,plot_df$new_pop,legend)
   coords <- (emigration(pop))
   final_plot <- arrow_plot(p, coords, arrow_limit)
-  print(final_plot)
+  return(final_plot)
 }
 
 # UI ----
@@ -498,7 +499,8 @@ server <- function(input, output) {
     health_value = 1,
     house_value = 1,
     jobs_value = 1,
-    edu_value = 1
+    edu_value = 1,
+    choice_value = "Baden"
   )
   
   observeEvent(input$go, {
@@ -508,6 +510,7 @@ server <- function(input, output) {
     sliderValues$house_value <- 1 + input$house / 100
     sliderValues$jobs_value <- 1 + input$jobs / 100
     sliderValues$edu_value <- 1 + input$edu / 100
+    sliderValues$choice_value <- input$choice
     
     # Update the selected commune when the button is pressed
     selected_commune(input$choice)
@@ -520,8 +523,8 @@ server <- function(input, output) {
   # Reactive expression to create a data frame of all input values
   sliderData <- reactive({
     data.frame(
-      Name = c("Health services:", "House/Rental Prices:", "Job Opportunities:", "Education:"),
-      Value = c(sliderValues$health_value, sliderValues$house_value, sliderValues$jobs_value, sliderValues$edu_value),
+      Name = c("commune","Health services:", "House/Rental Prices:", "Job Opportunities:", "Education:"),
+      Value = c(sliderValues$choice_value,sliderValues$health_value, sliderValues$house_value, sliderValues$jobs_value, sliderValues$edu_value),
       stringsAsFactors = FALSE
     )
   })
@@ -532,15 +535,15 @@ server <- function(input, output) {
   
   output$map <- renderPlot({
     visual_option <- sliderData()[1, 2]
+    slider_df <- isolate(sliderData())
     numeric_visual_option <- as.numeric(visual_option)
-    
     options(
       shiny.reactlog = TRUE,
       shiny.reactlog_interval = 1000
     )
     # Visualize all the maps
     #baden_commune_map(commune_general_info, commune_general_info$Gesamtbevölkerung, "Population")
-    simulate(sliderValues,pop_df,"Population",30) #slider inputs, population dataframe, legend, arrow person limit
+    print(simulate(slider_df,pop_df,"Population",30)) #slider inputs, population dataframe, legend, arrow person limit
   }, width = 900, height = 600)
 }
 
