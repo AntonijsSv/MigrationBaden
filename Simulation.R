@@ -90,8 +90,7 @@ pop_analysis <- function(pop) {
 pop_v <- pop_analysis(pop_v)
 
 fpop <- filter(factor_pop, Years == 2021)
-fpop_22 <- filter(factor_pop, Years == 2022) %>%
-  dplyr::select(starts_with("pop"))
+#Last year with complete data
 
 # ggplot map ----
 map500 <- raster("Maps/Baden500_excess.tif")%>% 
@@ -458,7 +457,7 @@ coef_Würenlos <- data.frame(coefficient=c("Intercept","house_würenlos","health
 coefficients <- paste0("coef_",communes)
 
 
-# Emigration Matrix ----
+# Emigration Matrix !LEGACY! ----
 move_out <- matrix(0, nrow = length(communes), ncol = 5)
 rownames(move_out) <- communes
 colnames(move_out) <- c("General %","0-1km", "1-5km", "5-10km","10+km")
@@ -490,7 +489,7 @@ for (commune in 1:length(communes)) {
   }
 }
 
-#Emigration Calculation ----
+# LEGACY Emigration Calculation ----
 
 
 emigration_ha <- function(commune) {
@@ -616,6 +615,108 @@ emigration_distance <- function(df) {
   
   
 }
+# TRIALs Distance Calculation ----
+for (commune in 1:length(communes)) {
+  emigration_distance <- sample(2:6,size=1,prob=move_out[commune,2:5])#Gives a random distance the people will move out
+  ha_in_commune <- filter(ha_geo,Gemeinde == communes[commune])
+  ha <- runif(1, min=1, max=nrow(ha_in_commune))
+  baden_hectare_map(ha,ha$B21BTOT,"hectare")
+}
+
+lower_lim <- c(-1,1001,5001,10001,50001)
+upper_lim <- c(1000,5000,1000,50000,50001)
+
+
+
+
+baden_hectare_map(ha_geo,ha_geo$B21BTOT,"hectare")
+                                                                                                  
+#near_Baden_10k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=5000)[[1]]
+#near_Baden_50k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=10000)[[1]]%>%
+#  setdiff(near_Baden_10k)
+
+#baden_commune_map(commune_geo[near_Baden_50k,],commune_geo$population[near_Baden_50k],"population")
+
+
+#Simulation ----
+factors <- colnames(factor_pop)[-c(1:27)]
+factor_change <- data.frame(factors = factors, change = 1)
+factor_change$factors <- gsub("\\(AG)|", "",factor_change$factors)
+factor_change$factors <- gsub("\\..AG.|", "",factor_change$factors)
+
+factor_change <- as.data.frame(t(factor_change))
+colnames(factor_change) <- factor_change[1,]
+factor_change <- dplyr::select(factor_change, starts_with(c("Year","house","rent","ent_","edu","health")))
+
+
+
+
+slider_to_factor <- function(slider_input) {
+  #' slider_input is a df containing all interactions with user
+  #' data is the 
+  #Extract data 
+  f_change <- factor_change
+  df <- as.data.frame(t(slider_input))
+  colnames(df) <- df[1,]
+  commune <- dplyr::select(df,contains("Commune"))[2,]
+  health <- dplyr::select(df,contains("health"))[2,]
+  house <- dplyr::select(df,contains("house"))[2,]
+  rent <- dplyr::select(df,contains("rent"))[2,]
+  ent <- dplyr::select(df,contains("Job"))[2,]
+  edu <- dplyr::select(df,contains("Education"))[2,]
+  cat(commune,health,house,rent,ent,edu)
+  
+  f_change <- dplyr::select(f_change,ends_with(paste0("_",commune)))
+  factor_name <- c("house","rent","ent","edu","health")
+  factor <- c(house,rent,ent,edu,health)
+  f_change[1,] <- commune 
+  for (i in 1:5) {
+    f <- paste0(factor_name[i],"_",commune)
+    #print(f)
+    #print(f_change[[f]])
+    
+    factor_i <- as.numeric(factor[i])
+    #print(factor[i])
+    #print(factor_i)
+    f_change[[f]][2] <- factor_i
+  }
+  return(f_change)
+}
+
+factor_to_pop <- function(factor_change_df,factor_value_df,pop) {
+  #'chose THE COLUMN IN YOUR POP DF YOU WANT CHANGED
+  print("start factor to pop")
+  commune <- factor_change_df[1,1]
+  
+  c <- which(communes==commune)
+  for (i in 1:length(communes)) {
+    coef_commune <- paste0("coef_",communes[i])
+    influential_factors <- get(coef_commune)$coefficient #includes intercept
+    #print(c(influential_factors,"factors"))
+    influential_values <- get(coef_commune)$value
+    #print(c(influential_values,"value"))
+    #cat(influential_factors,influential_values,"influential factors, values")
+    pop[i] <- influential_values[1] #set population to intercept
+    for (f in 2:length(influential_factors)) {
+      coef <- influential_factors[f]
+      #print(c(coef,"coef"))
+      factor_change <- 1
+      if (c==i) {
+        factor_change <- as.numeric(dplyr::select(factor_change_df,starts_with(coef))[2,])
+      }
+      factor_value <- as.numeric(dplyr::select(factor_value_df,starts_with(coef))[1,])
+      #print(c(factor_value,"value"))
+      #print(c(factor_change,"change"))
+      #print(c(pop[c],influential_values[i],factor_change*factor_value))
+      pop[i] <- pop[i]+influential_values[f]*factor_change*factor_value
+    }
+    
+    pop[i]<- pop[i]*runif(1,min=0.95,max=1.05)
+  }
+  
+  
+  return(pop)
+}
 
 emigration <- function(pop) {
   #'pop is pop_v
@@ -680,130 +781,25 @@ arrow_plot <- function (plot, arrow_data, limit) {
     )
   return(p)
 }
-coords <- (emigration(pop_v))
 
-final_plot <- arrow_plot(p, coords, 30)
-
-final_plot
-
-
-#Distance Calculation ----
-for (commune in 1:length(communes)) {
-  emigration_distance <- sample(2:6,size=1,prob=move_out[commune,2:5])#Gives a random distance the people will move out
-  ha_in_commune <- filter(ha_geo,Gemeinde == communes[commune])
-  ha <- runif(1, min=1, max=nrow(ha_in_commune))
-  baden_hectare_map(ha,ha$B21BTOT,"hectare")
+simulate <- function(slider_input,pop,legend,arrow_limit) {
+  factor_change <- slider_to_factor(slider_demo)
+  pop$new_pop <- factor_to_pop(factor_change,fpop,pop$new_pop)
+  pop <- pop_analysis(pop)
+  plot_df <- commune_geo
+  plot_df$new_pop <- pop$new_pop
+  p <- baden_commune_map(plot_df,plot_df$new_pop,legend)
+  coords <- (emigration(pop))
+  final_plot <- arrow_plot(p, coords, arrow_limit)
+  return(final_plot)
 }
+factor_change <- slider_to_factor(slider_demo)
 
-lower_lim <- c(-1,1001,5001,10001,50001)
-upper_lim <- c(1000,5000,1000,50000,50001)
-
-
-
-
-baden_hectare_map(ha_geo,ha_geo$B21BTOT,"hectare")
-                                                                                                  
-#near_Baden_10k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=5000)[[1]]
-#near_Baden_50k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=10000)[[1]]%>%
-#  setdiff(near_Baden_10k)
-
-#baden_commune_map(commune_geo[near_Baden_50k,],commune_geo$population[near_Baden_50k],"population")
-
-
-#Simulation ----
-factors <- colnames(factor_pop)[-c(1:27)]
-factor_change <- data.frame(factors = factors, change1 = 1, change2 = 1, change3 = 1, change4 = 1, change5 = 1)
-factor_change$factors <- gsub("\\(AG)|", "",factor_change$factors)
-factor_change$factors <- gsub("\\..AG.|", "",factor_change$factors)
-
-factor_change <- as.data.frame(t(factor_change))
-colnames(factor_change) <- factor_change[1,]
-factor_change <- dplyr::select(factor_change, starts_with(c("Year","house","rent","ent_","edu","health")))
-
-
-
-
-simulation <- function(slider_input) {
-  #' slider_input is a df containing all interactions with user
-  #' data is the 
-  #Extract data 
-  f_change <- factor_change
-  df <- as.data.frame(t(slider_input))
-  colnames(df) <- df[1,]
-  commune <- dplyr::select(df,contains("Commune"))[2,]
-  health <- dplyr::select(df,contains("health"))[2,]
-  house <- dplyr::select(df,contains("house"))[2,]
-  rent <- dplyr::select(df,contains("rent"))[2,]
-  ent <- dplyr::select(df,contains("Job"))[2,]
-  edu <- dplyr::select(df,contains("Education"))[2,]
-  cat(commune,health,house,rent,ent,edu)
-  
-  f_change <- dplyr::select(f_change,ends_with(paste0("_",commune)))
-  
-  factor_name <- c("house","rent","ent","edu","health")
-  factor <- c(house,rent,ent,edu,health)
-  f_change[1,] <- commune 
-  for (i in 1:5) {
-    f <- paste0(factor_name[i],"_",commune)
-    #print(f)
-    #print(f_change[[f]])
-    
-    factor_i <- as.numeric(factor[i])
-    #print(factor[i])
-    #print(factor_i)
-    f_change[[f]][2] <- factor_i
-  }
-  return(f_change)
-}
-
-x <- simulation(slider_demo)
-view(x)
-
-factor_to_pop <- function(factor_change_df,factor_value_df,pop) {
-  #'chose THE COLUMN IN YOUR POP DF YOU WANT CHANGED
-  print("start factor to pop")
-  commune <- factor_change_df[1,1]
-  
-  c <- which(communes==commune)
-  for (i in 1:length(communes)) {
-    coef_commune <- paste0("coef_",communes[i])
-    influential_factors <- get(coef_commune)$coefficient #includes intercept
-    #print(c(influential_factors,"factors"))
-    influential_values <- get(coef_commune)$value
-    #print(c(influential_values,"value"))
-    #cat(influential_factors,influential_values,"influential factors, values")
-    pop[i] <- influential_values[1] #set population to intercept
-    for (f in 2:length(influential_factors)) {
-      coef <- influential_factors[f]
-      #print(c(coef,"coef"))
-      factor_change <- 1
-      if (c==i) {
-        factor_change <- as.numeric(dplyr::select(factor_change_df,starts_with(coef))[2,])
-      }
-      factor_value <- as.numeric(dplyr::select(factor_value_df,starts_with(coef))[1,])
-      #print(c(factor_value,"value"))
-      #print(c(factor_change,"change"))
-      #print(c(pop[c],influential_values[i],factor_change*factor_value))
-      pop[i] <- pop[i]+influential_values[f]*factor_change*factor_value
-    }
-    
-    pop[i]<- pop[i]*runif(1,min=0.95,max=1.05)
-  }
-    
-  
-  return(pop)
-}
-
-pop_v$new_pop <- factor_to_pop(x,fpop,pop_v$new_pop)
+pop_v$new_pop <- factor_to_pop(factor_change,fpop,pop_v$new_pop)
 
 pop_v <- pop_analysis(pop_v)
 
-plot_df <- commune_geo
-
-plot_df$new_pop <- pop_v$new_pop
 
 
-p<-baden_commune_map(plot_df,plot_df$new_pop,"population")
-p
-
-
+plot <- simulate(slider_demo,pop_v,"Population",30)
+plot
