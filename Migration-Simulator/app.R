@@ -19,6 +19,7 @@ library(ggarchery)
 library(shinyjs)
 
 # Files ----
+factor_pop <- read.csv("final_dataset.csv")
 sf_conversion <- function(df_file,x,y){
   #'df_file is the input file, it requires an x and y coordinate column
   #'ensure that the x and y columns do not have NAs: df %>% filter(!is.na(column))
@@ -477,18 +478,14 @@ ui <- fluidPage(
                   max = 100,
                   value = 0),
       actionButton("go", "GO"),
-      wellPanel(
-        textOutput("selected_option")
       ),
-      tableOutput("values")
-    ),                
-                #Main Part of Website (displaying map & Slider values)
-                mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
-                          plotOutput("map")
+    #Main Part of Website (displaying map & Slider values)
+    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
+              plotOutput("map")
                           
                 )
-  )
-)
+  ))
+
 # Server ----
 server <- function(input, output) {
   # Create a reactiveVal to store the commune
