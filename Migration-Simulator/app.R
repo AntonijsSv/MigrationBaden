@@ -430,6 +430,7 @@ ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulation"))),
   sidebarLayout(
     sidebarPanel(
+      #drop-down menu
       selectInput(inputId = "choice",
                   label = h4(strong("Select a municipality:")),
                   choices = c("Baden",
@@ -462,21 +463,25 @@ ui <- fluidPage(
       ),
       h4(strong("Migration Factors:")),
       useShinyjs(),
+      #Sliders for Health Services
       sliderInput(inputId = "health",
                   label = "Health Services",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Gouse/Rental Prices
       sliderInput(inputId = "house",
                   label = "House/Rental Prices",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Job Opportunities
       sliderInput(inputId = "jobs",
                   label = "Job Opportunities",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Education
       sliderInput(inputId = "edu",
                   label = "Education",
                   min = -100,
