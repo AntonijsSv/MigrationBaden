@@ -485,7 +485,7 @@ ui <- fluidPage(
       actionButton("go", "GO")
     ),
     #Main Part of Website (displaying map & Slider values)
-    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
+    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities. Attention: The output of Remetschwil, Bellikon, and Oberrohrdorf aren't very accurate due to lack of data! "),
               plotOutput("map")
               
     )
