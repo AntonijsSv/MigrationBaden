@@ -20,6 +20,7 @@ library(shinyjs)
 
 # Files ----
 n <-  0
+factor_pop <- read.csv("final_dataset.csv")
 sf_conversion <- function(df_file,x,y){
   #'df_file is the input file, it requires an x and y coordinate column
   #'ensure that the x and y columns do not have NAs: df %>% filter(!is.na(column))
@@ -273,7 +274,6 @@ coefficients <- paste0("coef_",communes)
 
 
 # Simulation ----
-
 slider_to_factor <- function(slider_input) {
   #' slider_input is a df containing all interactions with user
   #' data is the 
@@ -389,6 +389,7 @@ emigration <- function(pop) {
   return(arrow_data)
 }
 
+# Function to plot arrows on the map
 arrow_plot <- function (plot, arrow_data, limit) {
   #arrow data needs to be this format: x1,x2,y1,y2,people
   #limit refers to amount of people is required before an arrow is drawn
@@ -402,7 +403,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
                  position = position_attractsegment(start_shave = 0.1, 
                                                     end_shave = 0.1))+
     scale_color_viridis(
-      name = paste("People Migrating, at least", limit, "people")
+      name = paste("People Migrating (at least", limit, "people)")
     )
   return(p)
 }
@@ -481,19 +482,15 @@ ui <- fluidPage(
                   min = -100,
                   max = 100,
                   value = 0),
-      actionButton("go", "GO"),
-      wellPanel(
-        textOutput("selected_option")
-      ),
-      tableOutput("values")
-    ),                
-                #Main Part of Website (displaying map & Slider values)
-                mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
-                          plotOutput("map")
-                          
-                )
-  )
-)
+      actionButton("go", "GO")
+    ),
+    #Main Part of Website (displaying map & Slider values)
+    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
+              plotOutput("map")
+              
+    )
+  ))
+
 # Server ----
 server <- function(input, output) {
   # Create a reactiveVal to store the commune
@@ -509,8 +506,7 @@ server <- function(input, output) {
   )
   
   observeEvent(input$go, {
-    showNotification("Simulation Started", type = "message", duration = 10)
-    n <- 0
+    showNotification("Processing", type = "message", duration = 10)
     # Update the reactive values
     sliderValues$health_value <- 1 + input$health / 100
     sliderValues$house_value <- 1 + input$house / 100
@@ -547,12 +543,14 @@ server <- function(input, output) {
       shiny.reactlog = TRUE,
       shiny.reactlog_interval = 1000
     )
+    
     # Visualize all the maps
     #baden_commune_map(commune_general_info, commune_general_info$Gesamtbevölkerung, "Population")
-    print(n)
-    print(simulate(slider_df,pop_df,"Population",30)) #slider inputs, population dataframe, legend, arrow person limit
+    final_plot <- (simulate(slider_df,pop_df,"Population",30)) #slider inputs, population dataframe, legend, arrow person limit
+    print(final_plot)
   }, width = 900, height = 600)
 }
+
 
 # Run the app ----
 shinyApp(ui = ui, server = server)
