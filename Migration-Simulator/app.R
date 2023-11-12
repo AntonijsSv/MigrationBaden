@@ -19,6 +19,7 @@ library(ggarchery)
 library(shinyjs)
 
 # Files ----
+n <-  0
 sf_conversion <- function(df_file,x,y){
   #'df_file is the input file, it requires an x and y coordinate column
   #'ensure that the x and y columns do not have NAs: df %>% filter(!is.na(column))
@@ -413,6 +414,10 @@ simulate <- function(slider_input,pop,legend,arrow_limit) {
   plot_df <- commune_geo
   plot_df$new_pop <- pop$new_pop
   p <- baden_commune_map(plot_df,plot_df$new_pop,legend)
+  if (n== 0) {
+    n <<- 1
+    return(p)
+  }
   coords <- (emigration(pop))
   final_plot <- arrow_plot(p, coords, arrow_limit)
   return(final_plot)
@@ -505,6 +510,7 @@ server <- function(input, output) {
   
   observeEvent(input$go, {
     showNotification("Simulation Started", type = "message", duration = 10)
+    n <- 0
     # Update the reactive values
     sliderValues$health_value <- 1 + input$health / 100
     sliderValues$house_value <- 1 + input$house / 100
@@ -543,6 +549,7 @@ server <- function(input, output) {
     )
     # Visualize all the maps
     #baden_commune_map(commune_general_info, commune_general_info$Gesamtbevölkerung, "Population")
+    print(n)
     print(simulate(slider_df,pop_df,"Population",30)) #slider inputs, population dataframe, legend, arrow person limit
   }, width = 900, height = 600)
 }
