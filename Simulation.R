@@ -89,6 +89,7 @@ pop_analysis <- function(pop) {
 }
 pop_v <- pop_analysis(pop_v)
 
+factor_pop <- read_csv("final_dataset.csv")
 fpop <- filter(factor_pop, Years == 2021)
 #Last year with complete data
 
@@ -458,173 +459,173 @@ coefficients <- paste0("coef_",communes)
 
 
 # Emigration Matrix !LEGACY! ----
-move_out <- matrix(0, nrow = length(communes), ncol = 5)
-rownames(move_out) <- communes
-colnames(move_out) <- c("General %","0-1km", "1-5km", "5-10km","10+km")
+#move_out <- matrix(0, nrow = length(communes), ncol = 5)
+#rownames(move_out) <- communes
+#colnames(move_out) <- c("General %","0-1km", "1-5km", "5-10km","10+km")
 
 
-commune_type <- matrix(0,nrow=length(communes),ncol=5)
-commune_type[,1]<- communes
-commune_type[,2] <- c(1,4,2,5,5,2,3,5,2,3,4,5,5,2,5,4,2,5,3,5,2,2,2,5,5,3)
-move_out_percent <- data.frame("urban"= c(.097,.305,.344,.114,.237),
-                               "small_urban" = c(.093,.344,.29,.102,.265),
-                               "peri-urban" = c(.078,.258,.244,.189,.309),
-                               "rural-centre" = c(.091,.37,.213,.099,.317),
-                               "rural" = c(.078,.268,.239,.167,.324))
+#commune_type <- matrix(0,nrow=length(communes),ncol=5)
+#commune_type[,1]<- communes
+#commune_type[,2] <- c(1,4,2,5,5,2,3,5,2,3,4,5,5,2,5,4,2,5,3,5,2,2,2,5,5,3)
+#move_out_percent <- data.frame("urban"= c(.097,.305,.344,.114,.237),
+#                               "small_urban" = c(.093,.344,.29,.102,.265),
+#                               "peri-urban" = c(.078,.258,.244,.189,.309),
+#                               "rural-centre" = c(.091,.37,.213,.099,.317),
+#                               "rural" = c(.078,.268,.239,.167,.324))
 #Data collected from 
 #https://www.swissstats.bfs.admin.ch/collection/ch.admin.bfs.swissstat.en.issue201420182000/article/issue201420182000-10
-for (commune in 1:length(communes)) {
-  type <- as.numeric(commune_type[commune,2])
-  for (i in 1:ncol(move_out)) {
-    move_out[commune,i] <- move_out_percent[i,type]
-  }
-}
+#for (commune in 1:length(communes)) {
+#  type <- as.numeric(commune_type[commune,2])
+#  for (i in 1:ncol(move_out)) {
+#    move_out[commune,i] <- move_out_percent[i,type]
+#  }
+#}
 
 #Data collected from 
 #https://www.swissstats.bfs.admin.ch/collection/ch.admin.bfs.swissstat.en.issue201420182000/article/issue201420182000-10
-for (commune in 1:length(communes)) {
-  type <- as.numeric(commune_type[commune,2])
-  for (i in 1:ncol(move_out)) {
-    move_out[commune,i] <- move_out_percent[i,type]
-  }
-}
+#for (commune in 1:length(communes)) {
+#  type <- as.numeric(commune_type[commune,2])
+#  for (i in 1:ncol(move_out)) {
+#    move_out[commune,i] <- move_out_percent[i,type]
+#  }
+#b}
 
 # LEGACY Emigration Calculation ----
 
 
-emigration_ha <- function(commune) {
+#emigration_ha <- function(commune) {
   #Finding Start and End
-  emigration_distance <- sample(1:5,size=1,prob=move_out[1,2:6])#Gives a random distance the people will move out
-  ha_in_commune <- filter(ha_geo,Gemeinde == commune)
-  n_ha <- sample(1:nrow(ha_in_commune),1)
-  ha <- st_centroid(ha_in_commune[n_ha,])
-  near_ha_lower_lim <- st_is_within_distance(
-    ha$geometry,ha_geo,
-    dist=lower_lim[emigration_distance])[[1]]
-  ha_distance <- st_is_within_distance(
-    ha$geometry,ha_geo,
-    dist=upper_lim[emigration_distance])[[1]]%>%
-    setdiff(near_ha_lower_lim)
-  
-  ha_within_distance <- ha_geo[ha_distance,]%>%
-    filter(Gemeinde != commune)
-  
-  ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1),]
-  
-  ha_goal <- st_centroid(ha_goal)
+  #emigration_distance <- sample(1:5,size=1,prob=move_out[1,2:6])#Gives a random distance the people will move out
+  #ha_in_commune <- filter(ha_geo,Gemeinde == commune)
+  #n_ha <- sample(1:nrow(ha_in_commune),1)
+  #ha <- st_centroid(ha_in_commune[n_ha,])
+  #near_ha_lower_lim <- st_is_within_distance(
+  #  ha$geometry,ha_geo,
+  #  dist=lower_lim[emigration_distance])[[1]]
+  #ha_distance <- st_is_within_distance(
+#    ha$geometry,ha_geo,
+#    dist=upper_lim[emigration_distance])[[1]]%>%
+#    setdiff(near_ha_lower_lim)
+#  
+#  ha_within_distance <- ha_geo[ha_distance,]%>%
+#    filter(Gemeinde != commune)
+#  
+#  ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1),]
+#  
+#  ha_goal <- st_centroid(ha_goal)
   
   #Plot
-  p <- baden_commune_arrow(ha,ha_goal,commune_geo,commune_geo$population,"Pop")
-  return(p)
-}
-move_in_commune <- data.frame(immigration = rep(0,26))
-move_in_commune <- t(move_in_commune)
-colnames(move_in_commune) <- communes
+#  p <- baden_commune_arrow(ha,ha_goal,commune_geo,commune_geo$population,"Pop")
+#  return(p)
+#}
+#move_in_commune <- data.frame(immigration = rep(0,26))
+#move_in_commune <- t(move_in_commune)
+#colnames(move_in_commune) <- communes
 
-emigration_1commune <- function(commune, population_change) {
+#emigration_1commune <- function(commune, population_change) {
 
   
-  n <- which(communes == commune)
-  emigration_distance <- population_change*move_out[n,2:6]#Gives a random distance the people will move out
-  commune_start <- st_centroid(filter(commune_geo, Gemeinde == commune))
-  ha_in_commune <- filter(ha_geo,Gemeinde == commune)
-  n_ha <- sample(1:nrow(ha_in_commune),population_change, replace=TRUE)
-  ha <- st_centroid(ha_in_commune[n_ha,])
-  pop_change_10 <- as.integer(population_change/10)
-  print(pop_change_10)
+#  n <- which(communes == commune)
+#  emigration_distance <- population_change*move_out[n,2:6]#Gives a random distance the people will move out
+#  commune_start <- st_centroid(filter(commune_geo, Gemeinde == commune))
+#  ha_in_commune <- filter(ha_geo,Gemeinde == commune)
+#  n_ha <- sample(1:nrow(ha_in_commune),population_change, replace=TRUE)
+#  ha <- st_centroid(ha_in_commune[n_ha,])
+#  pop_change_10 <- as.integer(population_change/10)
+#  print(pop_change_10)
   
-  for (i in 1:pop_change_10) {
-    print("start")
-    distance <- emigration_distance[i]
-    print(distance)
-    move_in_commune[1,] <- 0
+#  for (i in 1:pop_change_10) {
+#    print("start")
+#    distance <- emigration_distance[i]
+#    print(distance)
+#    move_in_commune[1,] <- 0
+#    
+#    near_ha_lower_lim <- st_is_within_distance(
+#      ha$geometry,ha_geo,
+#      dist=lower_lim[distance])[[1]]
+#    print(near_ha_lower_lim)
     
-    near_ha_lower_lim <- st_is_within_distance(
-      ha$geometry,ha_geo,
-      dist=lower_lim[distance])[[1]]
-    print(near_ha_lower_lim)
+#    ha_distance <- st_is_within_distance(
+#      ha$geometry,ha_geo,
+#      dist=upper_lim[distance])[[1]]%>%
+#      setdiff(near_ha_lower_lim)
+#    print(ha_distance[])
+#    ha_within_distance <- ha_geo[ha_distance,]%>%
+#      filter(Gemeinde != commune)
+#    ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1,replace=TRUE),]
+#    c <- st_drop_geometry(dplyr::select(ha_goal, Gemeinde))
     
-    ha_distance <- st_is_within_distance(
-      ha$geometry,ha_geo,
-      dist=upper_lim[distance])[[1]]%>%
-      setdiff(near_ha_lower_lim)
-    print(ha_distance[])
-    ha_within_distance <- ha_geo[ha_distance,]%>%
-      filter(Gemeinde != commune)
-    ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1,replace=TRUE),]
-    c <- st_drop_geometry(dplyr::select(ha_goal, Gemeinde))
-    
-    print(c)
-    print(i)
-  }
+#    print(c)
+#    print(i)
+#  }
   
   #ha_goal <- st_centroid(ha_goal)
   #commune_goal <- st_drop_geometry(ha_goal[1,1])
   #commune_destination <- st_centroid(filter(commune_geo, Gemeinde == as.character(commune_goal)))
   
   #Plot
-  p <- baden_commune_arrow(commune_start,commune_destination,commune_geo,commune_geo$population,"Pop")
-  return(p)
-}
+  #p <- baden_commune_arrow(commune_start,commune_destination,commune_geo,commune_geo$population,"Pop")
+  #return(p)
+#}
 
 #emigration_1commune("Untersiggenthal",1000)
 
-emigration_distance <- function(df) {
+#emigration_distance <- function(df) {
   #' first column is communes and 2nd is an emigration column
-  commune = "Baden"
-  pop_emigrate <- df[commune,2]
-  emigrate_distance <- pop_emigrate*move_out[commune,2:5]
-  commune_start <- filter(commune_geo, Gemeinde == commune)
-  ha_in_commune <- st_within(ha_geo$geometry,commune_start$geometry)[[1]]
-  ha_in_commune <- ha_geo[ha_in_commune,]
-  print("1km")
-  print(st_centroid(commune_start))
+  #commune = "Baden"
+  #pop_emigrate <- df[commune,2]
+  #emigrate_distance <- pop_emigrate*move_out[commune,2:5]
+  #commune_start <- filter(commune_geo, Gemeinde == commune)
+  #ha_in_commune <- st_within(ha_geo$geometry,commune_start$geometry)[[1]]
+  #ha_in_commune <- ha_geo[ha_in_commune,]
+  #print("1km")
+  #print(st_centroid(commune_start))
   
   
-  distance_1km_communes <- st_is_within_distance(commune_start,commune_geo,dist=1000)[[1]]%>%
-    setdiff(ha_in_commune)
-  communes_1km <- commune_geo[distance_1km_communes,]
+#  distance_1km_communes <- st_is_within_distance(commune_start,commune_geo,dist=1000)[[1]]%>%
+#    setdiff(ha_in_commune)
+#  communes_1km <- commune_geo[distance_1km_communes,]
   #print(baden_commune_map(communes_1km$geometry,communes_1km$population,"pop"))
-  communes_name_1k <- unique(communes_1km$Gemeinde)
-  pop_per_commune_1km <- emigrate_distance[1]/length(communes_name_1k)
+#  communes_name_1k <- unique(communes_1km$Gemeinde)
+#  pop_per_commune_1km <- emigrate_distance[1]/length(communes_name_1k)
 
   
   
-  distance_1km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=1000)[[1]]
-  ha_1km <- ha_geo[distance_1km,]
+#  distance_1km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=1000)[[1]]
+#  ha_1km <- ha_geo[distance_1km,]
   #print(baden_hectare_map(ha_1km$geometry,ha_1km$B21BTOT,"pop"))
   
-  print("5km")
-  distance_5km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=5000)[[1]]
-  ha_5km <- ha_geo[distance_5km,]
-  distance_5km <- st_difference(ha_5km$geometry,commune_start$geometry)
-  ha_5km <- ha_geo[distance_5km,]
+#  print("5km")
+#  distance_5km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=5000)[[1]]
+#  ha_5km <- ha_geo[distance_5km,]
+#  distance_5km <- st_difference(ha_5km$geometry,commune_start$geometry)
+#  ha_5km <- ha_geo[distance_5km,]
   #print(baden_hectare_map(ha_5km$geometry,ha_5km$B21BTOT,"pop"))
   
-  communes_5km <- unique(ha_5km$Gemeinde)
+#  communes_5km <- unique(ha_5km$Gemeinde)
   
-  ha_5km_polygon <- st_boundary(ha_5km)
+#  ha_5km_polygon <- st_boundary(ha_5km)
   
   
-  print("10km")
-  distance_10km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=10000)[[1]]
+#  print("10km")
+#  distance_10km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=10000)[[1]]
   #ha_10km <- ha_geo[distance_10km,]
   #distance_10km <- st_difference(ha_10km$geometry,ha_5km_polygon$geometry)
   #ha_10km <- ha_geo[distance_10km,]
   #print(baden_hectare_map(ha_10km$geometry,ha_10km$B21BTOT,"pop"))
   
   
-}
+#}
 # TRIALs Distance Calculation ----
-for (commune in 1:length(communes)) {
-  emigration_distance <- sample(2:6,size=1,prob=move_out[commune,2:5])#Gives a random distance the people will move out
-  ha_in_commune <- filter(ha_geo,Gemeinde == communes[commune])
-  ha <- runif(1, min=1, max=nrow(ha_in_commune))
-  baden_hectare_map(ha,ha$B21BTOT,"hectare")
-}
+#for (commune in 1:length(communes)) {
+#  emigration_distance <- sample(2:6,size=1,prob=move_out[commune,2:5])#Gives a random distance the people will move out
+#  ha_in_commune <- filter(ha_geo,Gemeinde == communes[commune])
+#  ha <- runif(1, min=1, max=nrow(ha_in_commune))
+#  baden_hectare_map(ha,ha$B21BTOT,"hectare")
+#}
 
-lower_lim <- c(-1,1001,5001,10001,50001)
-upper_lim <- c(1000,5000,1000,50000,50001)
+#lower_lim <- c(-1,1001,5001,10001,50001)
+#upper_lim <- c(1000,5000,1000,50000,50001)
 
 
 
@@ -783,7 +784,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
 }
 
 simulate <- function(slider_input,pop,legend,arrow_limit) {
-  factor_change <- slider_to_factor(slider_demo)
+  factor_change <- slider_to_factor(slider_input)
   pop$new_pop <- factor_to_pop(factor_change,fpop,pop$new_pop)
   pop <- pop_analysis(pop)
   plot_df <- commune_geo
