@@ -273,7 +273,7 @@ coefficients <- paste0("coef_",communes)
 
 
 # Simulation ----
-
+n <- 0
 slider_to_factor <- function(slider_input) {
   #' slider_input is a df containing all interactions with user
   #' data is the 
@@ -403,7 +403,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
                  position = position_attractsegment(start_shave = 0.1, 
                                                     end_shave = 0.1))+
     scale_color_viridis(
-      name = paste("People Migrating, at least", limit, "people")
+      name = paste("People Migrating (at least", limit, "people)")
     )
   return(p)
 }
@@ -415,6 +415,10 @@ simulate <- function(slider_input,pop,legend,arrow_limit) {
   plot_df <- commune_geo
   plot_df$new_pop <- pop$new_pop
   p <- baden_commune_map(plot_df,plot_df$new_pop,legend)
+  if (n == 0){
+    n <- 1
+    return(p)
+  }
   coords <- (emigration(pop))
   final_plot <- arrow_plot(p, coords, arrow_limit)
   return(final_plot)
