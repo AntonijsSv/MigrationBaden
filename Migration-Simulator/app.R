@@ -485,6 +485,7 @@ ui <- fluidPage(
   titlePanel(h1(strong("Migration Simulation"))),
   sidebarLayout(
     sidebarPanel(
+      #drop-down menu
       selectInput(inputId = "choice",
                   label = h4(strong("Select a municipality:")),
                   choices = c("Baden",
@@ -517,21 +518,25 @@ ui <- fluidPage(
       ),
       h4(strong("Migration Factors:")),
       useShinyjs(),
+      #Sliders for Health Services
       sliderInput(inputId = "health",
                   label = "Health Services",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Gouse/Rental Prices
       sliderInput(inputId = "house",
                   label = "House/Rental Prices",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Job Opportunities
       sliderInput(inputId = "jobs",
                   label = "Job Opportunities",
                   min = -100,
                   max = 100,
                   value = 0),
+      #Sliders for Education
       sliderInput(inputId = "edu",
                   label = "Education",
                   min = -100,
@@ -540,7 +545,7 @@ ui <- fluidPage(
       actionButton("go", "GO")
     ),
     #Main Part of Website (displaying map & Slider values)
-    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities."),
+    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities. Attention: The output of Remetschwil, Bellikon, and Oberrohrdorf aren't very accurate due to lack of data! "),
               plotOutput("map")
               
     )
