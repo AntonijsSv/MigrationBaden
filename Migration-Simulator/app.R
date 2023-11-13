@@ -19,6 +19,7 @@ library(ggarchery)
 library(shinyjs)
 
 # Files ----
+n <-  0
 factor_pop <- read.csv("final_dataset.csv")
 sf_conversion <- function(df_file,x,y){
   #'df_file is the input file, it requires an x and y coordinate column
@@ -112,6 +113,7 @@ fpop <- filter(factor_pop, Years == 2021)
 
 factors <- colnames(factor_pop)[-c(1:27)]
 factor_change <- data.frame(factors = factors, change = 1)
+#view(factor_change)
 factor_change$factors <- gsub("\\(AG)|", "",factor_change$factors)
 factor_change$factors <- gsub("\\..AG.|", "",factor_change$factors)
 
@@ -200,7 +202,6 @@ baden_commune_map <- function(visual_data,fill_data,legend)
       )
     ) +
     scale_fill_identity() +
-    
     #Theme aesthetics
     theme_minimal()+
     theme(
@@ -215,57 +216,82 @@ baden_commune_map <- function(visual_data,fill_data,legend)
 }
 
 # Coefficients ----
-coef_Baden <- data.frame(coefficient=c("Intercept","rent_baden","edu_baden","ent_baden","health_baden"),
+coef_Baden <- data.frame(coefficient=c("Intercept","rent_Baden","edu_Baden","ent_Baden","health_Baden"),
                          value = c(18722.953506, 11.350421, 4.829288, -1.240632, 4.364191))
-coef_Bellikon <- data.frame(coefficient=c("Intercept","rent_bellikon","edu_bellikon","ent_bellikon","health_bellikon"),
+
+coef_Bellikon <- data.frame(coefficient=c("Intercept","rent_Bellikon","edu_Bellikon","ent_Bellikon","health_Bellikon"),
                             value = c(1473.5045931, 0.3991652, 2.3630931, 0.3799376, -1.2387387))
-coef_Bergdietikon <- data.frame(coefficient=c("Intercept","rent_bergdietikon","edu_bergdietikon","health_bergdietikon","ent_bergdietikon","ent_bellikon"),
+
+coef_Bergdietikon <- data.frame(coefficient=c("Intercept","rent_Bergdietikon","edu_Bergdietikon","health_Bergdietikon","ent_Bergdietikon","ent_Bellikon"),
                                 value = c(2605.392354, 3.194327, -13.046932, 13.687470, 1.937724, -6.995531))
-coef_Birmenstorf <- data.frame(coefficient=c("Intercept","house_birmenstorf","ent_birmenstorf","health_birmenstorf","edu_birmenstorf"),
+
+coef_Birmenstorf <- data.frame(coefficient=c("Intercept","house_Birmenstorf","ent_Birmenstorf","health_Birmenstorf","edu_Birmenstorf"),
                                value = c(-2509.1699083, 0.1036378, 29.0945234, -17.4955843, -6.7901265))
-coef_Ehrendingen <- data.frame(coefficient=c("Intercept","rent_ehrendingen","health_ehrendingen","edu_ehrendingen","ent_ehrendingen","health_ennetbaden"),
+
+coef_Ehrendingen <- data.frame(coefficient=c("Intercept","rent_Ehrendingen","health_Ehrendingen","edu_Ehrendingen","ent_Ehrendingen","health_Ennetbaden"),
                                value = c(4803.4280544, 2.3406851, -37.5065624, 8.3782970, 0.3075315, 14.5713066))
-coef_Ennetbaden <- data.frame(coefficient=c("Intercept","rent_ennetbaden","edu_baden","health_ennetbaden","ent_ennetbaden","edu_ennetbaden"),
-                              value = c(1976.895519, 2.548093, 4.237226, -5.628923, 3.327639, 3.178744 ))
-coef_Fislisbach <- data.frame(coefficient=c("Intercept","house_fislisbach","health_fislisbach","edu_fislisbach","ent_fislisbach"),
-                              value = c(3824.6934918,0.1686995,-20.7352791,6.7736144,4.4623245))
-coef_Freienwil <- data.frame(coefficient=c("Intercept","house_freienwil","edu_freienwil","ent_freienwil","health_freienwil"),
+
+coef_Ennetbaden <- data.frame(coefficient=c("Intercept","rent_Ennetbaden","health_Ennetbaden","ent_Ennetbaden","edu_Ennetbaden"),
+                              value = c(2490.251890, 3.158476, -2.009877, 2.077860, 5.575472))
+
+coef_Fislisbach <- data.frame(coefficient=c("Intercept","house_Fislisbach","health_Fislisbach","edu_Fislisbach","ent_Fislisbach"),
+                              value = c(3824.6934918, 0.1686995, -20.7352791, 6.7736144, 4.4623245))
+
+coef_Freienwil <- data.frame(coefficient=c("Intercept","house_Freienwil","edu_Freienwil","ent_Freienwil","health_Freienwil"),
                              value = c(390.65135613, 0.09613579, 0, -1.64552364, 28.73733984))
-coef_Gebenstorf <- data.frame(coefficient=c("Intercept","house_gebenstorf","ent_gebenstorf","health_gebenstorf","edu_gebenstorf"),
+
+coef_Gebenstorf <- data.frame(coefficient=c("Intercept","house_Gebenstorf","ent_Gebenstorf","health_Gebenstorf","edu_Gebenstorf"),
                               value = c(1832.8666469, 0.4895858, 1.0662318, -5.1684264, 6.3912439))
-coef_Killwangen <- data.frame(coefficient=c("Intercept","house_killwangen","ent_killwangen","edu_killwangen","health_killwangen"),
+
+coef_Killwangen <- data.frame(coefficient=c("Intercept","house_Killwangen","ent_Killwangen","edu_Killwangen","health_Killwangen"),
                               value = c(878.63922189, 0.08506498, 6.05574741, -18.20455843, -10.33643870))
-coef_Künten <- data.frame(coefficient=c("Intercept","house_künten","health_künten","edu_künten","ent_künten"),
+
+coef_Künten <- data.frame(coefficient=c("Intercept","house_Künten","health_Künten","edu_Künten","ent_Künten"),
                           value = c(928.60548084, 0.13144222, 8.47340091, -5.01405734, -0.01651525))
-coef_Mägenwil <- data.frame(coefficient=c("Intercept","rent_mägenwil","ent_mägenwil","edu_mellingen","edu_mägenwil","health_mägenwil"),
+
+coef_Mägenwil <- data.frame(coefficient=c("Intercept","rent_Mägenwil","ent_Mägenwil","edu_Mellingen","edu_Mägenwil","health_Mägenwil"),
                             value = c(1582.738044, 1.702261, 1.333401, 3.911492, 2.778947, 6.970707))
-coef_Mellingen <- data.frame(coefficient=c("Intercept","rent_mellingen","health_mellingen","edu_mellingen","ent_mellingen","ent_fislisbach"),
+
+coef_Mellingen <- data.frame(coefficient=c("Intercept","rent_Mellingen","health_Mellingen","edu_Mellingen","ent_Mellingen","ent_Fislisbach"),
                              value = c(274.7192201, 12.8040883, 0.5836928, -48.0007417, 15.0362766, 0.4539605))
-coef_Neuenhof <- data.frame(coefficient=c("Intercept","house_neuenhof","health_neuenhof","edu_neuenhof","ent_neuenhof"),
+
+coef_Neuenhof <- data.frame(coefficient=c("Intercept","house_Neuenhof","health_Neuenhof","edu_Neuenhof","ent_Neuenhof"),
                             value = c(4320.1430750, 0.4630323, -7.9489663, -22.6455862, 5.1012512))
-coef_Niederrohrdorf <- data.frame(coefficient=c("Intercept","house_niederrohrdorf","edu_oberrohrdorf","ent_niederrohrdorf","edu_niederrohrdorf","health_niederrohrdorf"),
-                                  value = c(1877.5472727, 0.4474443, -43.3997678, 1.8055217, -2.6150562, -16.6376079 ))
-coef_Oberrohrdorf <- data.frame(coefficient=c("Intercept","house_oberrohrdorf","edu_oberrohrdorf","ent_oberrohrdorf","health_oberrohrdorf"),
+
+coef_Niederrohrdorf <- data.frame(coefficient=c("Intercept","house_Niederrohrdorf","ent_Niederrohrdorf","edu_Niederrohrdorf","health_Niederrohrdorf"),
+                                  value = c(461.4387896, 0.4485123, 4.2842850, 12.4621162, -25.0180065))
+
+coef_Oberrohrdorf <- data.frame(coefficient=c("Intercept","house_Oberrohrdorf","edu_Oberrohrdorf","ent_Oberrohrdorf","health_Oberrohrdorf"),
                                 value = c(3084.7303926, 0.1529742, -0.9588283, 6.1889287, 3.2997615))
-coef_Obersiggenthal <- data.frame(coefficient=c("Intercept","house_obersiggenthal","health_obersiggenthal","ent_obersiggenthal","edu_obersiggenthal"),
+
+coef_Obersiggenthal <- data.frame(coefficient=c("Intercept","house_Obersiggenthal","health_Obersiggenthal","ent_Obersiggenthal","edu_Obersiggenthal"),
                                   value = c(4.770200e+03, 9.132275e-02, 2.717372e+01, 5.456018e+00,1.199151e+01))
-coef_Remetschwil <- data.frame(coefficient=c("Intercept","rent_remetschwil","edu_remetschwil","health_remetschwil","ent_remetschwil"),
+
+coef_Remetschwil <- data.frame(coefficient=c("Intercept","rent_Remetschwil","edu_Remetschwil","health_Remetschwil","ent_Remetschwil"),
                                value = c(2632.5060709, 0.1523921, 0.2619645, 20.6831222, -5.4645576))
-coef_Spreitenbach <- data.frame(coefficient=c("Intercept","rent_spreitenbach","health_spreitenbach","ent_spreitenbach","edu_spreitenbach"),
+
+coef_Spreitenbach <- data.frame(coefficient=c("Intercept","rent_Spreitenbach","health_Spreitenbach","ent_Spreitenbach","edu_Spreitenbach"),
                                 value = c(10131.000818, 11.699141, 56.819847, -3.912515, 25.383187))
-coef_Turgi <- data.frame(coefficient=c("Intercept","rent_turgi","ent_turgi","health_turgi","edu_turgi"),
+
+coef_Turgi <- data.frame(coefficient=c("Intercept","rent_Turgi","ent_Turgi","health_Turgi","edu_Turgi"),
                          value = c(2376.939820, 0.032677, 2.044775, 2.796493, 3.028180))
-coef_Stetten <- data.frame(coefficient=c("Intercept","rent_stetten","health_stetten","edu_stetten","ent_stetten"),
-                           value = c(2001.469, 7.369, -2.398, 8.594, -3.416))
-coef_Untersiggenthal <- data.frame(coefficient=c("Intercept","house_untersiggenthal","ent_untersiggenthal","health_untersiggenthal","edu_untersiggenthal"),
+
+coef_Stetten <- data.frame(coefficient=c("Intercept","rent_Stetten","health_Stetten","edu_Stetten","ent_Stetten"),
+                           value = c(1397.677639, 10.217874, -62.996416, 5.506448, 2.397869))
+
+coef_Untersiggenthal <- data.frame(coefficient=c("Intercept","house_Untersiggenthal","ent_Untersiggenthal","health_Untersiggenthal","edu_Untersiggenthal"),
                                    value = c(4620.33048275, 0.09753149, 6.37650787, 14.58098721, -8.36437175 ))
-coef_Wettingen <- data.frame(coefficient=c("Intercept","rent_wettingen","edu_wettingen","health_wettingen","ent_wettingen"),
+
+coef_Wettingen <- data.frame(coefficient=c("Intercept","rent_Wettingen","edu_Wettingen","health_Wettingen","ent_Wettingen"),
                              value = c(12772.693753, 4.406298, 35.816860, 6.977471, 2.944182))
-coef_Wohlenschwil <- data.frame(coefficient=c("Intercept","house_wohlenschwil","health_wohlenschwil","edu_wohlenschwil","ent_wohlenschwil"),
+
+coef_Wohlenschwil <- data.frame(coefficient=c("Intercept","house_Wohlenschwil","health_Wohlenschwil","edu_Wohlenschwil","ent_Wohlenschwil"),
                                 value = c(1113.81743263, 0.09659737, -2.93676094, -7.05608405, -0.65940067))
-coef_Würenlingen <- data.frame(coefficient=c("Intercept","rent_würenlingen","health_würenlingen","edu_würenlingen","ent_würenlingen","ent_Untersiggenthal"),
+
+coef_Würenlingen <- data.frame(coefficient=c("Intercept","rent_Würenlingen","health_Würenlingen","edu_Würenlingen","ent_Würenlingen","ent_Untersiggenthal"),
                                value = c(2650.178783, 10.211383, 3.371687, -12.522055, -1.714890, 6.819109))
-coef_Würenlos <- data.frame(coefficient=c("Intercept","house_würenlos","health_würenlos","edu_würenlos","ent_würenlos","health_Neuenhof"),
+
+coef_Würenlos <- data.frame(coefficient=c("Intercept","house_Würenlos","health_Würenlos","edu_Würenlos","ent_Würenlos","health_Neuenhof"),
                             value = c(2544.8913199, 0.5344122, 0.7655624, -9.5892315, 3.3145121, -40.5820143))
 
 
@@ -273,11 +299,11 @@ coefficients <- paste0("coef_",communes)
 
 
 # Simulation ----
-n <- 0
 slider_to_factor <- function(slider_input) {
   #' slider_input is a df containing all interactions with user
   #' data is the 
   #Extract data 
+  print("start slider to factor")
   f_change <- factor_change
   df <- as.data.frame(t(slider_input))
   colnames(df) <- df[1,]
@@ -289,20 +315,29 @@ slider_to_factor <- function(slider_input) {
   edu <- dplyr::select(df,contains("Education"))[2,]
   cat(commune,health,house,rent,ent,edu)
   
-  f_change <- dplyr::select(f_change,ends_with(paste0("_",commune)))
+  coef <- get(paste0("coef_",commune))$coefficient[-1]
+  #print(coef)
+  f_change <- dplyr::select(f_change,contains(coef))
+  #print(f_change)
   
   factor_name <- c("house","rent","ent","edu","health")
   factor <- c(house,rent,ent,edu,health)
   f_change[1,] <- commune 
-  for (i in 1:5) {
-    f <- paste0(factor_name[i],"_",commune)
-    #print(f)
+  #print(f_change)
+  for (i in 1:length(coef)) {
+    f <- coef[i]
+    #print(class(f))
     #print(f_change[[f]])
-    
-    factor_i <- as.numeric(factor[i])
-    #print(factor[i])
+    #print(sub("^(.+)_(.+)$", "\\1", f))
+    coef_factor <- sub("^(.+)_(.+)$", "\\1", f)
+    coef_commune <- sub("^(.+)_(.+)$", "\\2", f)
+    c <- grep(paste0("^",coef_factor),factor_name)
+    factor_i <- as.numeric(factor[c])
+    #print(factor[c])
     #print(factor_i)
+    #print(c(f,class(f)))
     f_change[[f]][2] <- factor_i
+    f_change[[f]][1] <- coef_commune
   }
   #view(f_change)
   return(f_change)
@@ -344,7 +379,7 @@ factor_to_pop <- function(factor_change_df,factor_value_df,pop) {
 }
 
 emigration <- function(pop) {
-  #'pop is pop_df
+  #'pop is pop_v
   #'limit refers to min amount of people you want to indicate an arrow with
   arrow_data <- data.frame(x1 = 0,
                            x2 = 0,
@@ -382,9 +417,29 @@ emigration <- function(pop) {
       start_y <- start_point[2]
       end_x <- end_point[1]
       end_y <- end_point[2]
-      arrow_data <- rbind(arrow_data,c(start_x,end_x,start_y,end_y,migration))
+      
+      matching_point <- 
+        (arrow_data$x1 == end_x & arrow_data$x2 == start_x 
+         & arrow_data$y1 == end_y & arrow_data$y2 == start_y)
+      # arrow point from a to b and another from b to a
+      if (any(matching_point)) {
+        matchin_point_row <- which(matching_point)
+        arrow_data$people[matchin_point_row] = arrow_data$people[matchin_point_row]-abs(migration)
+        if (arrow_data$people[matchin_point_row] < 0) {
+          temp <- arrow_data[matchin_point_row,c(1,3)]
+          arrow_data[matchin_point_row,c(1,3)] <- arrow_data[matchin_point_row,c(2,4)]
+          arrow_data[matchin_point_row,c(2,4)] <- temp
+          arrow_data$people[matchin_point_row] <- abs(arrow_data$people[matchin_point_row])
+          
+        }
+        
+      }
+      else {
+        arrow_data <- rbind(arrow_data,c(start_x,end_x,start_y,end_y,abs(migration)))
+      }
     }
   }
+  
   arrow_data <- arrow_data[-1,]
   return(arrow_data)
 }
@@ -401,9 +456,9 @@ arrow_plot <- function (plot, arrow_data, limit) {
                  alpha = 0.8,
                  linewidth = 1.2,
                  position = position_attractsegment(start_shave = 0.1, 
-                                                    end_shave = 0.1))+
+                                                    end_shave = 0.2))+
     scale_color_viridis(
-      name = paste("People Migrating (at least", limit, "people)")
+      name = as.character(paste("Net Migration","between Gemeinden", paste("(min.", limit, "people)"),sep="\n"))
     )
   return(p)
 }
@@ -415,8 +470,8 @@ simulate <- function(slider_input,pop,legend,arrow_limit) {
   plot_df <- commune_geo
   plot_df$new_pop <- pop$new_pop
   p <- baden_commune_map(plot_df,plot_df$new_pop,legend)
-  if (n == 0){
-    n <- 1
+  if (n== 0) {
+    n <<- 1
     return(p)
   }
   coords <- (emigration(pop))
@@ -442,8 +497,8 @@ ui <- fluidPage(
                               "Freienwil",
                               "Gebenstorf",
                               "Killwangen",
-                              "Kuente",
-                              "Maegenwil",
+                              "Künten",
+                              "Mägenwil",
                               "Mellingen",
                               "Neuenhof",
                               "Niederrohrdorf",
@@ -456,8 +511,8 @@ ui <- fluidPage(
                               "Untersiggenthal",
                               "Wettingen",
                               "Wohlenschwil",
-                              "Wuerenlingen",
-                              "Wuerenlos",
+                              "Würenlingen",
+                              "Würenlos",
                               "Ehrendingen"
                   )
       ),
@@ -551,9 +606,7 @@ server <- function(input, output) {
     
     # Visualize all the maps
     #baden_commune_map(commune_general_info, commune_general_info$Gesamtbevölkerung, "Population")
-    map_plot <- simulate(slider_df,pop_df,"Population",30)  # slider inputs, population dataframe, legend, arrow person limit
-    arrow_data <- emigration(pop_df)
-    final_plot <- arrow_plot(map_plot, arrow_data, 30)  # Add arrows to the map
+    final_plot <- (simulate(slider_df,pop_df,"Population",30)) #slider inputs, population dataframe, legend, arrow person limit
     print(final_plot)
   }, width = 900, height = 600)
 }
