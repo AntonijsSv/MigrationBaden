@@ -89,6 +89,7 @@ pop_analysis <- function(pop) {
 }
 pop_v <- pop_analysis(pop_v)
 
+factor_pop <- read_csv("final_dataset.csv")
 fpop <- filter(factor_pop, Years == 2021)
 #Last year with complete data
 
@@ -184,222 +185,13 @@ baden_commune_map <- function(visual_data,fill_data,legend)
       panel.grid.minor = element_blank(),
     )
 }
-
-
-baden_commune_arrow <- function(point1,point2,visual_data,fill_data,legend) 
-{
-  #'visual data is the data frame with the data
-  #'fill data is the the column in the visual data data frame that will be visualized
-  #'legend is the title of the legend
-  coords <- data.frame(x1=st_coordinates(point1)[1],
-                       x2=st_coordinates(point2)[1],
-                       y1=st_coordinates(point1)[2],
-                       y2=st_coordinates(point2)[2])
-  
-  ggplot() + 
-    #The map background
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=map_colours[relief]
-          #since fill is already used for the data, alpha values are used to paint the map
-          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
-      ),
-    ) +
-    scale_fill_identity() +
-    
-    new_scale_fill() +
-    
-    #visualization of commune data
-    geom_sf( #Create the municiplality Boundaries
-      data = visual_data,
-      aes(fill=fill_data),
-      color = "black",
-      size = 1) +
-    
-    scale_fill_viridis(#Set a custom fill for the data to be visualised
-      option = "magma",
-      alpha = 0.6, #make them slightly transparent to see map background
-      begin = 0.1,
-      end = 0.9,
-      direction = -1,
-      name = legend
-    ) +
-    
-    new_scale_fill() +
-    
-    #Add a new layer to overlay place names above the data
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=place_names[relief]
-      ),
-    ) +
-    scale_fill_identity() +
-    geom_segment(data=coords, 
-                 aes(x=x1,y=y1,xend=x2,yend=y2),
-                 arrow = arrow(angle=30,length=unit(0.1,"cm"),ends="last",type="closed"),
-                 colour = "red",
-                 linewidth = 1,
-                 #transition_manual(time)
-    )+
-    #Theme aesthetics
-    theme_minimal()+
-    theme(
-      axis.line = element_blank(),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-    )
-}
-
-baden_hectare_map <- function(visual_data,fill_data,legend) 
-{
-  #'visual data is the data frame with the data
-  #'fill data is the the column in the visual data data frame that will be visualized
-  #'_ha -> everything with hectares
-  #'_communes -> everything with communes
-  #'!!!both dataframes need to be converted to sf files -> use sf_conversion function
-  #'legend is the title of the legend
-  ggplot() + 
-    #The map background
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=map_colours[relief]
-          #since fill is already used for the data, alpha values are used to paint the map
-          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
-      ),
-    ) +
-    scale_fill_identity() +
-    
-    new_scale_fill() +
-    #
-    geom_sf(data=visual_data, 
-            aes(fill=fill_data,
-                inherit.aes=FALSE),
-            colour = "transparent",
-            size = 1,
-    ) + 
-    #geom_tile(aes(fill=fill_data
-    #),
-    #) + 
-    #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
-    #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
-    scale_fill_viridis(name=legend,
-                       begin=0) +
-    
-    new_scale_fill() + 
-    
-    #Add a new layer to overlay place names above the data
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=place_names[relief]
-      ),
-    ) +
-    scale_fill_identity() +
-    
-    #Theme aesthetics
-    theme_minimal()+
-    theme(
-      axis.line = element_blank(),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-    )
-}
-baden_hectare_arrow <- function(ha1,ha2,visual_data,fill_data,legend)
-{
-  #'visual data is the data frame with the data
-  #'fill data is the the column in the visual data data frame that will be visualized
-  #'_ha -> everything with hectares
-  #'_communes -> everything with communes
-  #'!!!both dataframes need to be converted to sf files -> use sf_conversion function
-  #'legend is the title of the legend
-  coords <- data.frame(x1=ha1$E_KOORD,
-                       x2=seq(ha1$E_KOORD,ha2$E_KOORD, length=30),
-                       y1=ha1$N_KOORD,
-                       y2=seq(ha1$N_KOORD,ha2$N_KOORD, length=30),
-                       time = 1:30)
-  view(coords)
-  str(coords)
-  map <- ggplot() + 
-    #The map background
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=map_colours[relief]
-          #since fill is already used for the data, alpha values are used to paint the map
-          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
-      ),
-    ) +
-    scale_fill_identity() +
-    
-    new_scale_fill() +
-    #
-    geom_sf(data=visual_data, 
-            aes(fill=fill_data),
-            colour = "transparent",
-            size = 1,
-    ) + 
-    #geom_tile(aes(fill=fill_data
-    #),
-    #) + 
-    #by cutting B21BTOT (total population per hectare), you can set a colour to each part, colours mimic those found on the STATPOP website
-    #gradients were avoided for the first test, as data wasnt visualsed nicely with gradients
-    scale_fill_viridis(name=legend,
-                       begin=0) +
-    
-    new_scale_fill() + 
-    
-    #Add a new layer to overlay place names above the data
-    geom_raster(
-      data = map500,
-      inherit.aes = FALSE,
-      aes(x,y,
-          fill=place_names[relief]
-      ),
-    ) +
-    scale_fill_identity() +
-    geom_segment(data=coords, 
-                 aes(x=x1,y=y1,xend=x2,yend=y2),
-                 arrow = arrow(angle=30,length=unit(0.1,"cm"),ends="last",type="closed"),
-                 colour = "red",
-                 linewidth = 1,
-                 transition_manual(time)
-                 )+
-    #Theme aesthetics
-    theme_minimal()+
-    theme(
-      axis.line = element_blank(),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      #panel.grid.major = element_blank(),
-      #panel.grid.minor = element_blank(),
-    )
-    return(map)
-}
 # Slider Input ----
 slider_demo <- data.frame(
   Name = c("Commune","Health services:", "House/Rental Prices:", "Job Opportunities:","Education"),
   Value = c("Baden",1,2,1,1),
   stringsAsFactors = FALSE)
 # Coefficients ----
-
+#Possibly Outdated due to errors found in later data manipulation, look at app.R for 
 coef_Baden <- data.frame(coefficient=c("Intercept","rent_baden","edu_baden","ent_baden","health_baden"),
                          value = c(18722.953506, 11.350421, 4.829288, -1.240632, 4.364191))
 coef_Bellikon <- data.frame(coefficient=c("Intercept","rent_bellikon","edu_bellikon","ent_bellikon","health_bellikon"),
@@ -457,188 +249,7 @@ coef_Würenlos <- data.frame(coefficient=c("Intercept","house_würenlos","health
 coefficients <- paste0("coef_",communes)
 
 
-# Emigration Matrix !LEGACY! ----
-move_out <- matrix(0, nrow = length(communes), ncol = 5)
-rownames(move_out) <- communes
-colnames(move_out) <- c("General %","0-1km", "1-5km", "5-10km","10+km")
-
-
-commune_type <- matrix(0,nrow=length(communes),ncol=5)
-commune_type[,1]<- communes
-commune_type[,2] <- c(1,4,2,5,5,2,3,5,2,3,4,5,5,2,5,4,2,5,3,5,2,2,2,5,5,3)
-move_out_percent <- data.frame("urban"= c(.097,.305,.344,.114,.237),
-                               "small_urban" = c(.093,.344,.29,.102,.265),
-                               "peri-urban" = c(.078,.258,.244,.189,.309),
-                               "rural-centre" = c(.091,.37,.213,.099,.317),
-                               "rural" = c(.078,.268,.239,.167,.324))
-#Data collected from 
-#https://www.swissstats.bfs.admin.ch/collection/ch.admin.bfs.swissstat.en.issue201420182000/article/issue201420182000-10
-for (commune in 1:length(communes)) {
-  type <- as.numeric(commune_type[commune,2])
-  for (i in 1:ncol(move_out)) {
-    move_out[commune,i] <- move_out_percent[i,type]
-  }
-}
-
-#Data collected from 
-#https://www.swissstats.bfs.admin.ch/collection/ch.admin.bfs.swissstat.en.issue201420182000/article/issue201420182000-10
-for (commune in 1:length(communes)) {
-  type <- as.numeric(commune_type[commune,2])
-  for (i in 1:ncol(move_out)) {
-    move_out[commune,i] <- move_out_percent[i,type]
-  }
-}
-
-# LEGACY Emigration Calculation ----
-
-
-emigration_ha <- function(commune) {
-  #Finding Start and End
-  emigration_distance <- sample(1:5,size=1,prob=move_out[1,2:6])#Gives a random distance the people will move out
-  ha_in_commune <- filter(ha_geo,Gemeinde == commune)
-  n_ha <- sample(1:nrow(ha_in_commune),1)
-  ha <- st_centroid(ha_in_commune[n_ha,])
-  near_ha_lower_lim <- st_is_within_distance(
-    ha$geometry,ha_geo,
-    dist=lower_lim[emigration_distance])[[1]]
-  ha_distance <- st_is_within_distance(
-    ha$geometry,ha_geo,
-    dist=upper_lim[emigration_distance])[[1]]%>%
-    setdiff(near_ha_lower_lim)
-  
-  ha_within_distance <- ha_geo[ha_distance,]%>%
-    filter(Gemeinde != commune)
-  
-  ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1),]
-  
-  ha_goal <- st_centroid(ha_goal)
-  
-  #Plot
-  p <- baden_commune_arrow(ha,ha_goal,commune_geo,commune_geo$population,"Pop")
-  return(p)
-}
-move_in_commune <- data.frame(immigration = rep(0,26))
-move_in_commune <- t(move_in_commune)
-colnames(move_in_commune) <- communes
-
-emigration_1commune <- function(commune, population_change) {
-
-  
-  n <- which(communes == commune)
-  emigration_distance <- population_change*move_out[n,2:6]#Gives a random distance the people will move out
-  commune_start <- st_centroid(filter(commune_geo, Gemeinde == commune))
-  ha_in_commune <- filter(ha_geo,Gemeinde == commune)
-  n_ha <- sample(1:nrow(ha_in_commune),population_change, replace=TRUE)
-  ha <- st_centroid(ha_in_commune[n_ha,])
-  pop_change_10 <- as.integer(population_change/10)
-  print(pop_change_10)
-  
-  for (i in 1:pop_change_10) {
-    print("start")
-    distance <- emigration_distance[i]
-    print(distance)
-    move_in_commune[1,] <- 0
-    
-    near_ha_lower_lim <- st_is_within_distance(
-      ha$geometry,ha_geo,
-      dist=lower_lim[distance])[[1]]
-    print(near_ha_lower_lim)
-    
-    ha_distance <- st_is_within_distance(
-      ha$geometry,ha_geo,
-      dist=upper_lim[distance])[[1]]%>%
-      setdiff(near_ha_lower_lim)
-    print(ha_distance[])
-    ha_within_distance <- ha_geo[ha_distance,]%>%
-      filter(Gemeinde != commune)
-    ha_goal <- ha_within_distance[sample(1:nrow(ha_within_distance),1,replace=TRUE),]
-    c <- st_drop_geometry(dplyr::select(ha_goal, Gemeinde))
-    
-    print(c)
-    print(i)
-  }
-  
-  #ha_goal <- st_centroid(ha_goal)
-  #commune_goal <- st_drop_geometry(ha_goal[1,1])
-  #commune_destination <- st_centroid(filter(commune_geo, Gemeinde == as.character(commune_goal)))
-  
-  #Plot
-  p <- baden_commune_arrow(commune_start,commune_destination,commune_geo,commune_geo$population,"Pop")
-  return(p)
-}
-
-#emigration_1commune("Untersiggenthal",1000)
-
-emigration_distance <- function(df) {
-  #' first column is communes and 2nd is an emigration column
-  commune = "Baden"
-  pop_emigrate <- df[commune,2]
-  emigrate_distance <- pop_emigrate*move_out[commune,2:5]
-  commune_start <- filter(commune_geo, Gemeinde == commune)
-  ha_in_commune <- st_within(ha_geo$geometry,commune_start$geometry)[[1]]
-  ha_in_commune <- ha_geo[ha_in_commune,]
-  print("1km")
-  print(st_centroid(commune_start))
-  
-  
-  distance_1km_communes <- st_is_within_distance(commune_start,commune_geo,dist=1000)[[1]]%>%
-    setdiff(ha_in_commune)
-  communes_1km <- commune_geo[distance_1km_communes,]
-  #print(baden_commune_map(communes_1km$geometry,communes_1km$population,"pop"))
-  communes_name_1k <- unique(communes_1km$Gemeinde)
-  pop_per_commune_1km <- emigrate_distance[1]/length(communes_name_1k)
-
-  
-  
-  distance_1km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=1000)[[1]]
-  ha_1km <- ha_geo[distance_1km,]
-  #print(baden_hectare_map(ha_1km$geometry,ha_1km$B21BTOT,"pop"))
-  
-  print("5km")
-  distance_5km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=5000)[[1]]
-  ha_5km <- ha_geo[distance_5km,]
-  distance_5km <- st_difference(ha_5km$geometry,commune_start$geometry)
-  ha_5km <- ha_geo[distance_5km,]
-  #print(baden_hectare_map(ha_5km$geometry,ha_5km$B21BTOT,"pop"))
-  
-  communes_5km <- unique(ha_5km$Gemeinde)
-  
-  ha_5km_polygon <- st_boundary(ha_5km)
-  
-  
-  print("10km")
-  distance_10km <- st_is_within_distance(st_centroid(commune_start),ha_geo,dist=10000)[[1]]
-  #ha_10km <- ha_geo[distance_10km,]
-  #distance_10km <- st_difference(ha_10km$geometry,ha_5km_polygon$geometry)
-  #ha_10km <- ha_geo[distance_10km,]
-  #print(baden_hectare_map(ha_10km$geometry,ha_10km$B21BTOT,"pop"))
-  
-  
-}
-# TRIALs Distance Calculation ----
-for (commune in 1:length(communes)) {
-  emigration_distance <- sample(2:6,size=1,prob=move_out[commune,2:5])#Gives a random distance the people will move out
-  ha_in_commune <- filter(ha_geo,Gemeinde == communes[commune])
-  ha <- runif(1, min=1, max=nrow(ha_in_commune))
-  baden_hectare_map(ha,ha$B21BTOT,"hectare")
-}
-
-lower_lim <- c(-1,1001,5001,10001,50001)
-upper_lim <- c(1000,5000,1000,50000,50001)
-
-
-
-
-baden_hectare_map(ha_geo,ha_geo$B21BTOT,"hectare")
-                                                                                                  
-#near_Baden_10k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=5000)[[1]]
-#near_Baden_50k <- st_is_within_distance(commune_geo$geometry[1],commune_geo,dist=10000)[[1]]%>%
-#  setdiff(near_Baden_10k)
-
-#baden_commune_map(commune_geo[near_Baden_50k,],commune_geo$population[near_Baden_50k],"population")
-
-
-#Simulation ----
+# Simulation ----
 factors <- colnames(factor_pop)[-c(1:27)]
 factor_change <- data.frame(factors = factors, change = 1)
 factor_change$factors <- gsub("\\(AG)|", "",factor_change$factors)
@@ -743,7 +354,7 @@ emigration <- function(pop) {
     for (neighbour in 1:length(neighbour_communes)) {
       n_geo <- st_centroid(neighbour_communes_geo[neighbour,])
       migration <- n_geo$population/tot_pop_neighbour_commune*net_m
-      #People will travel to larger communes rather than small ones
+      #Distribute it by population
       
       if (net_m < 0) { #people move out
         start_point <- st_coordinates(st_centroid(c_geo))
@@ -757,9 +368,29 @@ emigration <- function(pop) {
       start_y <- start_point[2]
       end_x <- end_point[1]
       end_y <- end_point[2]
-      arrow_data <- rbind(arrow_data,c(start_x,end_x,start_y,end_y,migration))
+      
+      matching_point <- 
+        (arrow_data$x1 == end_x & arrow_data$x2 == start_x 
+         & arrow_data$y1 == end_y & arrow_data$y2 == start_y)
+      # arrow point from a to b and another from b to a
+      if (any(matching_point)) {
+        matchin_point_row <- which(matching_point)
+        arrow_data$people[matchin_point_row] = arrow_data$people[matchin_point_row]-abs(migration)
+        if (arrow_data$people[matchin_point_row] < 0) {
+          temp <- arrow_data[matchin_point_row,c(1,3)]
+          arrow_data[matchin_point_row,c(1,3)] <- arrow_data[matchin_point_row,c(2,4)]
+          arrow_data[matchin_point_row,c(2,4)] <- temp
+          arrow_data$people[matchin_point_row] <- abs(arrow_data$people[matchin_point_row])
+                  
+        }
+          
+      }
+      else {
+        arrow_data <- rbind(arrow_data,c(start_x,end_x,start_y,end_y,abs(migration)))
+      }
     }
   }
+  
   arrow_data <- arrow_data[-1,]
   return(arrow_data)
 }
@@ -775,15 +406,15 @@ arrow_plot <- function (plot, arrow_data, limit) {
                  alpha = 0.8,
                  linewidth = 1.2,
                  position = position_attractsegment(start_shave = 0.1, 
-                                                    end_shave = 0.1))+
+                                                    end_shave = 0.2))+
     scale_color_viridis(
-      name = paste("People Migrating, at least", limit, "people")
+      name = as.character(paste("Net Migration","between Gemeinden", paste("(min.", limit, "people)"),sep="\n"))
     )
   return(p)
 }
 
 simulate <- function(slider_input,pop,legend,arrow_limit) {
-  factor_change <- slider_to_factor(slider_demo)
+  factor_change <- slider_to_factor(slider_input)
   pop$new_pop <- factor_to_pop(factor_change,fpop,pop$new_pop)
   pop <- pop_analysis(pop)
   plot_df <- commune_geo
@@ -793,13 +424,26 @@ simulate <- function(slider_input,pop,legend,arrow_limit) {
   final_plot <- arrow_plot(p, coords, arrow_limit)
   return(final_plot)
 }
+
+
 factor_change <- slider_to_factor(slider_demo)
 
 pop_v$new_pop <- factor_to_pop(factor_change,fpop,pop_v$new_pop)
 
 pop_v <- pop_analysis(pop_v)
 
-
+slider_to_factor(slider_demo)
 
 plot <- simulate(slider_demo,pop_v,"Population",30)
 plot
+
+factor_change <- slider_to_factor(slider_demo)
+pop_v$new_pop <- factor_to_pop(factor_change,fpop,pop_v$new_pop)
+pop_v <- pop_analysis(pop_v)
+plot_df <- commune_geo
+plot_df$new_pop <- pop_v$new_pop
+p <- baden_commune_map(plot_df,plot_df$new_pop,"Population")
+coords <- emigration(pop_v)
+
+final_plot <- arrow_plot(p,coords,30)
+final_plot
