@@ -458,7 +458,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
                  position = position_attractsegment(start_shave = 0.1, 
                                                     end_shave = 0.2))+
     scale_color_viridis(
-      name = as.character(paste("Net Migration","between Gemeinden", paste("(min.", limit, "people)"),sep="\n"))
+      name = as.character(paste("Net Migration","between Communes", paste("(min.", limit, "people)"),sep="\n"))
     )
   return(p)
 }
@@ -487,7 +487,7 @@ ui <- fluidPage(
     sidebarPanel(
       #drop-down menu
       selectInput(inputId = "choice",
-                  label = h4(strong("Select a municipality:")),
+                  label = h4(strong("Select a commune:")),
                   choices = c("Baden",
                               "Bellikon",
                               "Bergdietikon",
@@ -545,7 +545,7 @@ ui <- fluidPage(
       actionButton("go", "GO")
     ),
     #Main Part of Website (displaying map & Slider values)
-    mainPanel(("The following map shows the population of the municipalities in the region Baden. By chosing a municipality in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain municipality. Then the GO button needs to pressed in order for the map to display the change in population of all municipalities. Attention: The output of Remetschwil, Bellikon and Oberrohrdorf aren't accurate and to be interpreted cautiously! "),
+    mainPanel(("The following map shows the population of the communes in the region Baden. By choosing a commune in the drop-down menu and moving the sliders on the left the migration factors can be increased/decreased in percentage (%) for a certain commune. Then the GO button needs to be pressed in order for the map to display the change in population of all communes. Attention: The output of Remetschwil, Bellikon and Oberrohrdorf aren't accurate and should be interpreted cautiously! "),
               plotOutput("map")
               
     )
