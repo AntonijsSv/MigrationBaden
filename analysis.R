@@ -212,6 +212,8 @@ factor_pop <- rbind(last_yr,factor_pop)
 factor_pop$house_Neuenhof <- factor_pop$house_Neuenhof[c(1,7:13,2:6)] #The data somehow got switched up in procedures before
 
 write.csv(factor_pop,"final_dataset.csv")
+fp <- filter(factor_pop,Years == 2021)
+write.csv(fp,"final_dataset_21.csv")
  
 # fpop creation ----
 df0 <-
@@ -248,30 +250,30 @@ fpop <- full_join(df0, df1, c("Years", "commune"))
 
 
 # fpop plotting ----
-fpop_factor_plot <- function(f) {
+fpop_factor_plot <- function(f,title) {
   #' f is the character name of the factor
   windows()
   fpop |>
     filter(factor == f) |>
     ggplot() +
     geom_path(aes(value, pop)) +
-    geom_text(aes(value, pop, label = Years), size = 2) +
-    facet_wrap(~commune, 10, 3, "free") +
-    theme_gray(base_size = 12)+
+    geom_point(aes(value, pop, colour = Years), size = 2) +
+    scale_colour_viridis_b() +
+    facet_wrap(~commune, 7, 4, "free") +
+    theme_bw(base_size = 12)+
     labs(
-      title = f
+      title = title
     )
 }
 
-fpop_factor_plot("house")
+fpop_factor_plot("edu","Education")
 
 
-write.csv(factor_pop,"final_dataset.csv")
 
 
 # Corrplots ----
 
-#No time Delay
+factors <- c("ent","house","rent","edu","health","entertainment")
 correlations <- paste0("cor_",factors)
 for (factor in 1:length(factors)) {
   cor_factor_name <- correlations[factor]
@@ -429,12 +431,18 @@ corr_matrix_factor("house","rent",factor_pop,"transparent")
 cm_commune_factor ("Neuenhof",factor_pop)
 
 fpop_factor_plot("ent")
+
 pair_plot("Birmenstorf")
 
 windows()
 par(mfrow=c(5,6),mar=c(3,3,3,1))
 plot(factor_pop$Years,factor_pop$pop_Birmenstorf)
 
+x <- dplyr::select(factor_pop,contains("_Birmenstorf"))
+x <- dplyr::select(x, starts_with(c("ent_", "house_", "rent_", "edu_", "health")))
+windows()
+par(mar=c(1,1,1,1))
+pairs(x,cex.labels= 1.5,cex.axis=1.5)
 
 # Multi-Variable Lm regression ----
 lm_Baden <- lm(pop_Baden~rent_Baden
@@ -496,7 +504,7 @@ plot(lm_Fislisbach)
 vif(lm_Fislisbach)
 
 lm_Freienwil <- lm(pop_Freienwil~house_Freienwil
-                   + health_Freienwil
+                   #+ health_Freienwil
                    + ent_Freienwil
                    + edu_Freienwil
                    , data = factor_pop)
