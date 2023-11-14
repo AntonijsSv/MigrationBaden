@@ -20,31 +20,7 @@ library(shinyjs)
 
 # Files ----
 n <-  0
-factor_pop <- read.csv("final_dataset.csv")
-sf_conversion <- function(df_file,x,y){
-  #'df_file is the input file, it requires an x and y coordinate column
-  #'ensure that the x and y columns do not have NAs: df %>% filter(!is.na(column))
-  #'x and y NEED TO BE STRINGS, should be the name of the column with the coordinates
-  #'If these columns do not have names, use: colnames(df)[x] <- "E_KOORD"
-  #'commune_geo should be an sf file of Baden -> boundaries
-  sf_file <- st_as_sf(df_file, coords=(c(x,y)))
-  #Take popdata and turn it from a basic data frame into a sf file, give it coordinates
-  sf_file$centre <- st_centroid(sf_file)
-  hectare_size <- 100
-  sf_file <- st_buffer(sf_file$centre,0.5*hectare_size,endCapStyle="SQUARE")#%>%
-  #  st_simplify()
-  #pop_data_sf <- st_make_grid(pop_data_sf,hectare_size)
-  #?st_simplify
-  sf_file <- st_set_crs(sf_file,st_crs(commune_geo))
-  #set the same coordinated system as gemeinden_coords
-  sf_file <- st_join(sf_file, commune_geo)
-  #Every hectare (point) in pop_data_sf is checked in which commune (mutlipolygon) its located
-  #every hectare is assigned to a commune
-  sf_file <- filter(sf_file,!is.na("Gemeinde"))
-  #remove all points/hectares not inside a commune
-  return(sf_file)
-} 
-# Function that takes hectare data and converts it to sf data and assigns each hectare to a commune
+factor_pop <- read.csv("final_dataset_21.csv")
 
 #Shape data for all municipality boundaries
 municipality_geo <- read_sf("Boundary_Data/g2g23.shp")
@@ -75,15 +51,6 @@ communes <- c(communes,"Ehrendingen")
 population <- read_xlsx("analysis/population_baden.xlsx")
 pop <- dplyr::select(population,"GMDE","population" = "2022")
 
-population_geo <- read_csv("analysis/STATPOP_21_11_wCommunes.csv")%>%
-  dplyr::select(-...1)%>%
-  mutate(x = E_KOORD, y = N_KOORD)
-
-pop_geo <- sf_conversion(population_geo,"x","y")%>%
-  dplyr::select(-Gemeinde.y)
-colnames(pop_geo)[1] <- "Gemeinde"
-ha_geo <- dplyr::select(pop_geo,Gemeinde,E_KOORD,N_KOORD,geometry,B21BTOT)
-
 commune_geo <- left_join(commune_geo,pop, by= join_by(GMDNR==GMDE))
 
 pop_df <- as.data.frame(population$"2021"[-1])
@@ -108,8 +75,6 @@ pop_analysis <- function(pop) {
 }
 
 pop_df <- pop_analysis(pop_df)
-
-fpop <- filter(factor_pop, Years == 2021)
 
 factors <- colnames(factor_pop)[-c(1:27)]
 factor_change <- data.frame(factors = factors, change = 1)
@@ -167,9 +132,7 @@ baden_commune_map <- function(visual_data,fill_data,legend)
       inherit.aes = FALSE,
       aes(x,y,
           fill=map_colours[relief]
-          #since fill is already used for the data, alpha values are used to paint the map
-          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
-      )
+        )
     ) +
     scale_fill_identity() +
     
@@ -294,16 +257,14 @@ coef_Würenlingen <- data.frame(coefficient=c("Intercept","rent_Würenlingen","h
 coef_Würenlos <- data.frame(coefficient=c("Intercept","house_Würenlos","health_Würenlos","edu_Würenlos","ent_Würenlos","health_Neuenhof"),
                             value = c(2544.8913199, 0.5344122, 0.7655624, -9.5892315, 3.3145121, -40.5820143))
 
-
 coefficients <- paste0("coef_",communes)
-
 
 # Simulation ----
 slider_to_factor <- function(slider_input) {
   #' slider_input is a df containing all interactions with user
   #' data is the 
   #Extract data 
-  print("start slider to factor")
+  #print("start slider to factor")
   f_change <- factor_change
   df <- as.data.frame(t(slider_input))
   colnames(df) <- df[1,]
@@ -313,7 +274,7 @@ slider_to_factor <- function(slider_input) {
   rent <- dplyr::select(df,contains("rent"))[2,]
   ent <- dplyr::select(df,contains("Job"))[2,]
   edu <- dplyr::select(df,contains("Education"))[2,]
-  cat(commune,health,house,rent,ent,edu)
+  #cat(commune,health,house,rent,ent,edu)
   
   coef <- get(paste0("coef_",commune))$coefficient[-1]
   #print(coef)
@@ -345,7 +306,7 @@ slider_to_factor <- function(slider_input) {
 
 factor_to_pop <- function(factor_change_df,factor_value_df,pop) {
   #'chose THE COLUMN IN YOUR POP DF YOU WANT CHANGED
-  print("start factor to pop")
+  #print("start factor to pop")
   commune <- factor_change_df[1,1]
   
   c <- which(communes==commune)
@@ -465,7 +426,7 @@ arrow_plot <- function (plot, arrow_data, limit) {
 
 simulate <- function(slider_input,pop,legend,arrow_limit) {
   factor_change <- slider_to_factor(slider_input)
-  pop$new_pop <- factor_to_pop(factor_change,fpop,pop$new_pop)
+  pop$new_pop <- factor_to_pop(factor_change,factor_pop,pop$new_pop)
   pop <- pop_analysis(pop)
   plot_df <- commune_geo
   plot_df$new_pop <- pop$new_pop

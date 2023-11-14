@@ -137,8 +137,6 @@ baden_commune_map <- function(visual_data,fill_data,legend)
       inherit.aes = FALSE,
       aes(x,y,
           fill=map_colours[relief]
-          #since fill is already used for the data, alpha values are used to paint the map
-          #eventually, either a 2nd fill will be attempted with workarounds, or plot transitioned to leaflet instead of ggplot
       ),
     ) +
     scale_fill_identity() +
@@ -247,7 +245,7 @@ coef_Würenlos <- data.frame(coefficient=c("Intercept","house_würenlos","health
 
 
 coefficients <- paste0("coef_",communes)
-
+p
 
 # Simulation ----
 factors <- colnames(factor_pop)[-c(1:27)]
@@ -442,8 +440,8 @@ pop_v$new_pop <- factor_to_pop(factor_change,fpop,pop_v$new_pop)
 pop_v <- pop_analysis(pop_v)
 plot_df <- commune_geo
 plot_df$new_pop <- pop_v$new_pop
-p <- baden_commune_map(plot_df,plot_df$new_pop,"Population")
+p <- baden_commune_map(commune_geo,commune_geo$population,"Population")
 coords <- emigration(pop_v)
-
+p
 final_plot <- arrow_plot(p,coords,30)
 final_plot
